@@ -25,6 +25,15 @@ const LasikSurvey = ({ isPublic }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
+    React.useEffect(() => {
+        if (!formData.date) {
+            setFormData(prev => ({
+                ...prev,
+                date: new Date().toISOString().split('T')[0]
+            }));
+        }
+    }, [formData.date]);
+
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxuFDz3LDBM88Wy-7naDgffvXQ0hH37-EMQhJuMcUId40PNG5yX_PFZLyXXiGYMB0zQ/exec';
 
     const handleToggle = (question, value) => {
@@ -188,14 +197,14 @@ const LasikSurvey = ({ isPublic }) => {
 };
 
 const HandwrittenInput = ({ label, value, onChange, type = "text" }) => (
-    <div className="flex items-end gap-6 min-h-[50px] md:min-h-[60px]">
-        <label className="text-xl md:text-2xl font-black text-slate-800 tracking-tight whitespace-nowrap mb-1">{label}</label>
+    <div className="flex items-end gap-2 md:gap-6 min-h-[50px] md:min-h-[60px]">
+        <label className="text-lg md:text-2xl font-black text-slate-800 tracking-tight whitespace-nowrap mb-1 shrink-0">{label}</label>
         <div className="flex-1 relative">
             <input 
                 type={type} 
                 value={value} 
                 onChange={e => onChange(e.target.value)} 
-                className="w-full bg-transparent border-0 outline-none p-0 text-xl md:text-2xl font-bold text-[#388E3C] tracking-tight h-10 md:h-12 italic"
+                className="w-full bg-transparent border-0 outline-none p-0 text-base md:text-2xl font-bold text-[#388E3C] tracking-tight h-10 md:h-12 italic focus:ring-0"
             />
             <div className="absolute bottom-0 left-0 right-0 border-b-[1.5px] border-dotted border-slate-400 pointer-events-none" />
         </div>

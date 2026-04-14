@@ -327,7 +327,7 @@ const SheetDashboard = ({ user, onLogout, isPublic }) => {
                         <div className="bg-white p-4 rounded-3xl shadow-lg border border-slate-50 relative group">
                             <QRCodeSVG 
                                 id="lasik-qr"
-                                value={`${window.location.origin}/index.html`}
+                                value={`${window.location.origin}/index.html?mode=survey`}
                                 size={140}
                                 level="H"
                                 includeMargin={false}

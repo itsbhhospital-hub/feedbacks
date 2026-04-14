@@ -25,8 +25,12 @@ import {
     TrendingUp,
     BarChart3,
     Calendar,
-    Layers
+    Layers,
+    Download,
+    Globe
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- CONSTANTS ---
@@ -98,6 +102,33 @@ const SheetDashboard = ({ user, onLogout, isPublic }) => {
 
     const scriptUrl = 'https://script.google.com/macros/s/AKfycbx9ZM4dSz8Yu3jmuVhWWgBdxCuUjeNRF7WXEio_hhs6JFfHvktAFraoy7Mtar6sL3c/exec';
     const lasikScriptUrl = 'https://script.google.com/macros/s/AKfycbxuFDz3LDBM88Wy-7naDgffvXQ0hH37-EMQhJuMcUId40PNG5yX_PFZLyXXiGYMB0zQ/exec';
+    const qrRef = useRef();
+
+    const handleDownloadQR = () => {
+        const svg = document.getElementById('lasik-qr');
+        if (!svg) return;
+        
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = () => {
+            canvas.width = 500;
+            canvas.height = 500;
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 50, 50, 400, 400);
+            
+            const pngFile = canvas.toDataURL("image/png");
+            const downloadLink = document.createElement("a");
+            downloadLink.download = "SBH_Lasik_Registration_QR.png";
+            downloadLink.href = pngFile;
+            downloadLink.click();
+        };
+        
+        img.src = "data:image/svg+xml;base64," + btoa(svgData);
+    };
 
     const toggleMenu = (menu) => {
         setExpandedMenus(prev => 
@@ -285,9 +316,47 @@ const SheetDashboard = ({ user, onLogout, isPublic }) => {
                         <div className="w-14 h-14 rounded-2xl bg-[#2E7D32]/10 flex items-center justify-center text-[#2E7D32]">
                             <CheckCircle2 size={28} />
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <p className="text-[10px] font-black uppercase text-slate-400">Total Survey Submissions</p>
                             <p className="text-3xl font-black text-slate-800 tracking-tighter">{stats.total}</p>
+                        </div>
+                    </div>
+
+                    {/* QR Code Section */}
+                    <div className="medical-card p-6 flex flex-col md:flex-row items-center gap-8 bg-white border-2 border-dashed border-[#2E7D32]/20">
+                        <div className="bg-white p-4 rounded-3xl shadow-lg border border-slate-50 relative group">
+                            <QRCodeSVG 
+                                id="lasik-qr"
+                                value={`${window.location.origin}/index.html`}
+                                size={140}
+                                level="H"
+                                includeMargin={false}
+                                imageSettings={{
+                                    src: "/logo.png",
+                                    x: undefined,
+                                    y: undefined,
+                                    height: 24,
+                                    width: 24,
+                                    excavate: true,
+                                }}
+                            />
+                        </div>
+                        <div className="flex-1 text-center md:text-left space-y-4">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2 justify-center md:justify-start">
+                                    <Scan size={18} className="text-[#2E7D32]" /> Registration QR
+                                </h3>
+                                <p className="text-xs font-bold text-slate-400 mt-1 leading-relaxed">
+                                    Scan this code to open the patient survey. <br className="hidden md:block"/>
+                                    Download and print for the registration desk.
+                                </p>
+                            </div>
+                            <button 
+                                onClick={handleDownloadQR}
+                                className="flex items-center gap-2 px-6 py-3 bg-[#2E7D32] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md active:scale-95"
+                            >
+                                <Download size={14} /> Download QR Code
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -411,92 +480,110 @@ const SheetDashboard = ({ user, onLogout, isPublic }) => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
-            {/* Redesigned Accordion Sidebar */}
             {!isPublic && (
-                <aside className={`fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-50 transition-all duration-300 w-64 shadow-xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-                    <div className="p-8 border-b border-slate-50 flex flex-col items-center justify-center bg-white gap-2">
-                        <img src="/logo.png" alt="SBH Logo" className="h-20 object-contain mb-2" />
-                        <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase leading-none">SBH Hospital</h1>
-                        <div className="flex items-center gap-2">
-                             <div className="w-1.5 h-1.5 rounded-full bg-[#2E7D32] animate-pulse" />
-                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Registry</span>
-                        </div>
-                    </div>
-
-                    <div className="p-4 space-y-4">
-                        {/* Menu Section */}
-                        <div className="space-y-1">
-                            <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Main Menu</p>
-                            <NavItem icon={<BarChart3 size={18}/>} label="Dashboard" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
-                        </div>
-
-                        {/* Collapsible IPD & OPD */}
-                        <div className="space-y-1">
-                            <button 
-                                onClick={() => toggleMenu('IPD_OPD')}
-                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 transition-all group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <Stethoscope size={18} className="text-slate-400 group-hover:text-[#2E7D32]"/>
-                                    <span className="text-[11px] font-black uppercase tracking-wider">IPD & OPD</span>
-                                </div>
-                                <ChevronRight size={14} className={`transition-transform opacity-50 ${expandedMenus.includes('IPD_OPD') ? 'rotate-90' : ''}`} />
-                            </button>
-                            <AnimatePresence>
-                                {expandedMenus.includes('IPD_OPD') && (
-                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-8 space-y-1">
-                                        <NavItem label="OPD Records" active={activeTab === 'OPD'} onClick={() => setActiveTab('OPD')} dot />
-                                        <NavItem label="Radiology" active={activeTab === 'RADIOLOGY'} onClick={() => setActiveTab('RADIOLOGY')} dot />
-                                        {user === 'SBH' && <NavItem label="Daily Targets" active={activeTab === 'TARGETS'} onClick={() => setActiveTab('TARGETS')} dot />}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* Collapsible LASIK */}
-                        <div className="space-y-1">
-                            <button 
-                                onClick={() => toggleMenu('LASIK')}
-                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 transition-all group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <Activity size={18} className="text-slate-400 group-hover:text-[#2E7D32]"/>
-                                    <span className="text-[11px] font-black uppercase tracking-wider">Lasik Vision</span>
-                                </div>
-                                <ChevronRight size={14} className={`transition-transform opacity-50 ${expandedMenus.includes('LASIK') ? 'rotate-90' : ''}`} />
-                            </button>
-                            <AnimatePresence>
-                                {expandedMenus.includes('LASIK') && (
-                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-8 space-y-1">
-                                        <NavItem label="New Registration" active={activeTab === 'LASIK_FORM'} onClick={() => setActiveTab('LASIK_FORM')} dot />
-                                        <NavItem label="LASIK Dashboard" active={activeTab === 'LASIK_STATS'} onClick={() => setActiveTab('LASIK_STATS')} dot />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {user === 'SBH' && (
-                            <div className="pt-2 border-t border-slate-50">
-                                <NavItem icon={<Layers size={18}/>} label="Admin Archive" active={activeTab === 'ADMIN'} onClick={() => setActiveTab('ADMIN')} />
-                            </div>
+                <>
+                    {/* Sidebar Backdrop for Mobile */}
+                    <AnimatePresence>
+                        {isSidebarOpen && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsSidebarOpen(false)}
+                                className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-40 lg:hidden"
+                            />
                         )}
-                    </div>
+                    </AnimatePresence>
 
-                    <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-50">
-                        <button onClick={onLogout} className="w-full flex items-center gap-3 text-slate-400 hover:text-rose-500 font-black text-[10px] uppercase transition-colors">
-                            <LogOut size={16} /> Logout System
-                        </button>
-                    </div>
-                </aside>
+                    <aside className={`fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-50 transition-all duration-300 w-64 shadow-2xl flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                        <div className="p-8 border-b border-slate-50 flex flex-col items-center justify-center bg-white gap-2">
+                            <img src="/logo.png" alt="SBH Logo" className="h-20 object-contain mb-2" />
+                            <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase leading-none">SBH Hospital</h1>
+                            <div className="flex items-center gap-2">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-[#2E7D32] animate-pulse" />
+                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Registry</span>
+                            </div>
+                        </div>
+
+                        <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+                            <div className="space-y-1">
+                                <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Main Menu</p>
+                                <NavItem 
+                                    icon={<BarChart3 size={18}/>} 
+                                    label="Dashboard" 
+                                    active={activeTab === 'DASHBOARD'} 
+                                    onClick={() => { setActiveTab('DASHBOARD'); setIsSidebarOpen(false); }} 
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <button 
+                                    onClick={() => toggleMenu('IPD_OPD')}
+                                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Stethoscope size={18} className="text-slate-400 group-hover:text-[#2E7D32]"/>
+                                        <span className="text-[11px] font-black uppercase tracking-wider">IPD & OPD</span>
+                                    </div>
+                                    <ChevronRight size={14} className={`transition-transform opacity-50 ${expandedMenus.includes('IPD_OPD') ? 'rotate-90' : ''}`} />
+                                </button>
+                                <AnimatePresence>
+                                    {expandedMenus.includes('IPD_OPD') && (
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-8 space-y-1">
+                                            <NavItem label="OPD Records" active={activeTab === 'OPD'} onClick={() => { setActiveTab('OPD'); setIsSidebarOpen(false); }} dot />
+                                            <NavItem label="Radiology" active={activeTab === 'RADIOLOGY'} onClick={() => { setActiveTab('RADIOLOGY'); setIsSidebarOpen(false); }} dot />
+                                            {user === 'SBH' && <NavItem label="Daily Targets" active={activeTab === 'TARGETS'} onClick={() => { setActiveTab('TARGETS'); setIsSidebarOpen(false); }} dot />}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            <div className="space-y-1">
+                                <button 
+                                    onClick={() => toggleMenu('LASIK')}
+                                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Activity size={18} className="text-slate-400 group-hover:text-[#2E7D32]"/>
+                                        <span className="text-[11px] font-black uppercase tracking-wider">Lasik Vision</span>
+                                    </div>
+                                    <ChevronRight size={14} className={`transition-transform opacity-50 ${expandedMenus.includes('LASIK') ? 'rotate-90' : ''}`} />
+                                </button>
+                                <AnimatePresence>
+                                    {expandedMenus.includes('LASIK') && (
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-8 space-y-1">
+                                            <NavItem label="New Registration" active={activeTab === 'LASIK_FORM'} onClick={() => { setActiveTab('LASIK_FORM'); setIsSidebarOpen(false); }} dot />
+                                            <NavItem label="LASIK Dashboard" active={activeTab === 'LASIK_STATS'} onClick={() => { setActiveTab('LASIK_STATS'); setIsSidebarOpen(false); }} dot />
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {user === 'SBH' && (
+                                <div className="pt-2 border-t border-slate-50">
+                                    <NavItem icon={<Layers size={18}/>} label="Admin Archive" active={activeTab === 'ADMIN'} onClick={() => { setActiveTab('ADMIN'); setIsSidebarOpen(false); }} />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 border-t border-slate-50">
+                            <button onClick={onLogout} className="w-full flex items-center gap-3 text-slate-400 hover:text-rose-500 font-black text-[10px] uppercase transition-colors">
+                                <LogOut size={16} /> Logout System
+                            </button>
+                        </div>
+                    </aside>
+                </>
             )}
 
-            {/* Content Area */}
             <div className="flex-1 flex flex-col">
                 {!isPublic && (
-                    <header className="h-16 bg-white border-b border-slate-50 px-8 flex items-center justify-between sticky top-0 z-40">
+                    <header className="h-16 bg-white border-b border-slate-100 px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 transition-all">
                         <div className="flex items-center gap-3 lg:hidden">
-                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-50 rounded-lg text-slate-500">
-                                <Hospital size={16} />
+                            <button 
+                                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                                className="p-3 bg-white border border-slate-200 rounded-xl text-slate-700 shadow-sm active:bg-slate-50 transition-all"
+                            >
+                                <Hospital size={20} className={isSidebarOpen ? 'text-[#2E7D32]' : ''} />
                             </button>
                         </div>
 

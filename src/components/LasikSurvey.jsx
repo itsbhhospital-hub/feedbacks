@@ -197,14 +197,14 @@ const LasikSurvey = ({ isPublic }) => {
 };
 
 const HandwrittenInput = ({ label, value, onChange, type = "text" }) => (
-    <div className="flex items-end gap-2 md:gap-6 min-h-[50px] md:min-h-[60px]">
-        <label className="text-lg md:text-2xl font-black text-slate-800 tracking-tight whitespace-nowrap mb-1 shrink-0">{label}</label>
-        <div className="flex-1 relative">
+    <div className="flex flex-col md:flex-row md:items-end gap-1 md:gap-6 min-h-[60px]">
+        <label className="text-xl md:text-2xl font-black text-slate-800 tracking-tight whitespace-nowrap mb-1">{label}</label>
+        <div className="flex-1 relative w-full">
             <input 
                 type={type} 
                 value={value} 
                 onChange={e => onChange(e.target.value)} 
-                className="w-full bg-transparent border-0 outline-none p-0 text-base md:text-2xl font-bold text-[#388E3C] tracking-tight h-10 md:h-12 italic focus:ring-0"
+                className={`w-full bg-transparent border-0 outline-none p-0 ${type === 'date' ? 'pr-8' : ''} text-2xl md:text-3xl font-bold text-[#388E3C] h-12 md:h-14 italic focus:ring-0`}
             />
             <div className="absolute bottom-0 left-0 right-0 border-b-[1.5px] border-dotted border-slate-400 pointer-events-none" />
         </div>

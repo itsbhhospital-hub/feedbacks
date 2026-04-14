@@ -99,7 +99,7 @@ const LasikSurvey = ({ isPublic }) => {
                 </div>
 
                 {/* Form Content */}
-                <form onSubmit={handleSubmit} className="relative z-10 flex-1 px-6 md:px-12 py-10 space-y-12">
+                <form onSubmit={handleSubmit} className="relative z-10 flex-1 px-4 md:px-12 py-10 space-y-12">
                     
                     {/* Identification Section (Centered 2-Column Grid) */}
                     <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">

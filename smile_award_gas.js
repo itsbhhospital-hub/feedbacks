@@ -25,39 +25,23 @@ function setupSheets() {
   }
 
   // 3. Master Summary (QUERY based leaderboard)
-  // This sheet is effectively managed by the QUERY formula in cell A2
   let summarySheet = ss.getSheetByName('Master_Summary');
   if (!summarySheet) {
     summarySheet = ss.insertSheet('Master_Summary');
-    summarySheet.getRange("A2").setFormula('=QUERY(Smile_Entries!A:H, "SELECT B, F, G, COUNT(F) WHERE F IS NOT NULL GROUP BY B, F, G ORDER BY COUNT(F) DESC LABEL COUNT(F) \'Votes\'", 1)');
   }
-
-  // 4. Final Winner
-  let winnerSheet = ss.getSheetByName('Final_Winner');
-  if (!winnerSheet) {
-    winnerSheet = ss.insertSheet('Final_Winner');
-    winnerSheet.appendRow(['Month', 'Department', 'Employee_Name', 'Votes', 'Email', 'Mobile', 'Status', 'Approved_At']);
-    winnerSheet.getRange("A1:H1").setBackground("#c2410c").setFontColor("white").setFontWeight("bold");
-  }
+  summarySheet.getRange("A1").setFormula('=QUERY(Smile_Entries!A:H, "SELECT B, F, G, COUNT(F) WHERE F IS NOT NULL GROUP BY B, F, G ORDER BY COUNT(F) DESC LABEL COUNT(F) \'Votes\'", 1)');
 }
 
 function doGet(e) {
   const action = e.parameter.action;
   
   try {
-    if (action === 'get_staff') {
-      return getStaffList();
-    }
-    if (action === 'get_leaderboard') {
-      return getLeaderboardData();
-    }
-    if (action === 'get_winners') {
-      return getFinalWinners();
-    }
+    if (action === 'get_staff') return getStaffList();
+    if (action === 'get_leaderboard') return getLeaderboardData();
+    if (action === 'get_winners') return getFinalWinners();
   } catch (err) {
     return createJsonResponse({ success: false, error: err.toString() });
   }
-  
   return createJsonResponse({ success: false, message: "Invalid action" });
 }
 
@@ -66,16 +50,11 @@ function doPost(e) {
   const action = data.action;
 
   try {
-    if (action === 'save_vote') {
-      return saveVote(data);
-    }
-    if (action === 'approve_winner') {
-      return approveWinner(data);
-    }
+    if (action === 'save_vote') return saveVote(data);
+    if (action === 'approve_winner') return approveWinner(data);
   } catch (err) {
     return createJsonResponse({ success: false, error: err.toString() });
   }
-
   return createJsonResponse({ success: false, message: "Unknown POST action" });
 }
 
@@ -85,6 +64,8 @@ function getStaffList() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Staff_Master');
   const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return createJsonResponse([]);
+  
   const headers = data[0];
   const staff = data.slice(1).map(row => {
     let obj = {};
@@ -96,12 +77,26 @@ function getStaffList() {
 
 function saveVote(res) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('Smile_Entries');
+  const entriesSheet = ss.getSheetByName('Smile_Entries');
+  const staffSheet = ss.getSheetByName('Staff_Master');
+  
   const now = new Date();
   const timestamp = Utilities.formatDate(now, "GMT+5:30", "yyyy-MM-dd HH:mm:ss");
   const month = Utilities.formatDate(now, "GMT+5:30", "MMMM yyyy");
   
-  sheet.appendRow([
+  // Self-Learning: Add Nominee to Master if new
+  if (res.isNewNominee && res.employeeName) {
+    const nextId = "ST" + (staffSheet.getLastRow() + 100);
+    staffSheet.appendRow([nextId, res.employeeName, res.department || 'General', '', '']);
+  }
+
+  // Self-Learning: Add Voter to Master if new
+  if (res.isNewVoter && res.voterName) {
+    const nextId = "ST" + (staffSheet.getLastRow() + 101);
+    staffSheet.appendRow([nextId, res.voterName, 'General', '', '']);
+  }
+
+  entriesSheet.appendRow([
     timestamp,
     month,
     res.voterId || 'N/A',
@@ -119,9 +114,10 @@ function getLeaderboardData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Master_Summary');
   const data = sheet.getDataRange().getValues();
+  
+  // Skip headers from QUERY which is at A1
   if (data.length <= 1) return createJsonResponse([]);
   
-  const headers = data[0]; // Month, Employee_Name, Department, Votes
   const entries = data.slice(1).map(row => ({
     month: row[0],
     name: row[1],

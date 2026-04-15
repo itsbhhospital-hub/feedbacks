@@ -136,7 +136,11 @@ const DataTable = ({ data, type, onEdit }) => (
 const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
     const filteredStats = useMemo(() => {
         const target = (selectedMonth || "").trim().toLowerCase();
-        return (stats.all || []).filter(s => (s.month || "").trim().toLowerCase() === target);
+        // Robust matching: Check if sheet data month includes target or vice versa
+        return (stats.all || []).filter(s => {
+            const m = (s.month || "").trim().toLowerCase();
+            return m === target || m.includes(target.split(' ')[0]) && m.includes(target.split(' ')[1]);
+        });
     }, [stats.all, selectedMonth]);
 
     const approvedWinners = useMemo(() => {
@@ -191,8 +195,23 @@ const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
 
 const HRApprovalPanel = ({ stats, winners, onApprove }) => {
     const [submitting, setSubmitting] = useState(false);
-    const currentMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }).trim().toLowerCase();
-    const candidates = (stats.all || []).filter(c => (c.month || "").trim().toLowerCase() === currentMonth);
+    
+    // Improved month string for comparison
+    const now = new Date();
+    const currentMonthLabel = now.toLocaleString('en-US', { month: 'long' }).toLowerCase();
+    const currentYearLabel = now.getFullYear().toString();
+    
+    const candidates = (stats.all || []).filter(c => {
+        const m = (c.month || "").trim().toLowerCase();
+        return m.includes(currentMonthLabel) && m.includes(currentYearLabel);
+    });
+
+    const isWinnerApproved = (name, month) => {
+        return winners.some(w => 
+            w.employee_name.toLowerCase() === name.toLowerCase() && 
+            (w.month || "").toLowerCase().includes(currentMonthLabel)
+        );
+    };
     return (
         <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border-2 border-slate-100 animate-in fade-in slide-in-from-bottom-5">
             <div className="mb-10"><h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">HR <span className="text-rose-600">Approval Panel</span></h2><p className="text-[10px] font-black text-slate-400 uppercase mt-1">Approve winners to trigger automated recognition</p></div>
@@ -201,7 +220,7 @@ const HRApprovalPanel = ({ stats, winners, onApprove }) => {
                     <thead><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50"><th className="pb-5 px-2">Candidate</th><th className="pb-5 px-2">Dept</th><th className="pb-5 px-2">Votes</th><th className="pb-5 px-2 text-right">Action</th></tr></thead>
                     <tbody className="divide-y divide-slate-50">
                         {candidates.map((c, i) => {
-                            const isApproved = winners.some(w => w.employee_name === c.name && w.month === c.month);
+                            const isApproved = isWinnerApproved(c.name, c.month);
                             return (
                                 <tr key={i} className="group">
                                     <td className="py-6 px-2 font-bold text-slate-700">{c.name}</td>
@@ -209,13 +228,13 @@ const HRApprovalPanel = ({ stats, winners, onApprove }) => {
                                     <td className="py-6 px-2 font-black text-slate-900">{c.votes}</td>
                                     <td className="py-6 px-2 text-right">
                                         {isApproved ? (<span className="inline-flex items-center gap-2 text-emerald-600 font-bold text-[10px] uppercase tracking-widest"><CheckCircle2 size={16} /> Approved</span>) : (
-                                            <button disabled={submitting === c.name} onClick={async () => { setSubmitting(c.name); try { await onApprove(c); alert('Winner Approved!'); } finally { setSubmitting(false); } }} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all disabled:opacity-50">{submitting === c.name ? '...' : 'Approve'}</button>
+                                            <button disabled={submitting === c.name} onClick={async () => { setSubmitting(c.name); try { await onApprove(c); } finally { setSubmitting(false); } }} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all disabled:opacity-50">{submitting === c.name ? '...' : 'Approve Winner'}</button>
                                         )}
                                     </td>
                                 </tr>
                             );
                         })}
-                        {candidates.length === 0 && <tr><td colSpan="4" className="py-20 text-center text-[10px] font-black text-slate-300 uppercase">No pending nominations for {currentMonth}</td></tr>}
+                        {candidates.length === 0 && <tr><td colSpan="4" className="py-20 text-center text-[10px] font-black text-slate-300 uppercase">No pending nominations for {currentMonthLabel} {currentYearLabel}</td></tr>}
                     </tbody>
                 </table>
             </div>
@@ -288,13 +307,21 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                     <div className="p-8 border-b border-slate-50 flex flex-col items-center"><img src="/logo.png" className="h-20 mb-2" /><h1 className="text-xl font-black text-slate-900 uppercase">SBH Hospital</h1></div>
                     <div className="p-4 flex-1 space-y-4 overflow-y-auto">
                         <NavItem icon={<BarChart3 size={18}/>} label="Dashboard" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
-                        <hr className="border-slate-50" />
-                        <NavItem label="OPD Records" active={activeTab === 'OPD'} onClick={() => setActiveTab('OPD')} dot />
-                        <NavItem label="Radiology" active={activeTab === 'RADIOLOGY'} onClick={() => setActiveTab('RADIOLOGY')} dot />
-                        <hr className="border-slate-50" />
-                        <NavItem icon={<Heart size={18}/>} label="Smile Nominations" active={activeTab === 'SMILE_AWARD'} onClick={() => setActiveTab('SMILE_AWARD')} />
+                        
+                        {user === 'SBH' && (
+                            <>
+                                <p className="px-4 pt-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Clinical Management</p>
+                                <NavItem label="OPD Records" active={activeTab === 'OPD'} onClick={() => setActiveTab('OPD')} dot />
+                                <NavItem label="Radiology" active={activeTab === 'RADIOLOGY'} onClick={() => setActiveTab('RADIOLOGY')} dot />
+                            </>
+                        )}
+
+                        <p className="px-4 pt-4 text-[9px] font-black text-[#BE123C] uppercase tracking-widest">Smile Award System</p>
+                        <NavItem icon={<Heart size={18}/>} label="Nominate Staff" active={activeTab === 'SMILE_AWARD'} onClick={() => setActiveTab('SMILE_AWARD')} />
                         <NavItem icon={<Trophy size={18}/>} label="Leaderboard" active={activeTab === 'SMILE_STATS'} onClick={() => setActiveTab('SMILE_STATS')} />
-                        {(user === 'SBH' || user === 'HR') && <NavItem icon={<CheckCircle2 size={18}/>} label="HR Portal" active={activeTab === 'HR_PANEL'} onClick={() => setActiveTab('HR_PANEL')} />}
+                        {(user === 'SBH' || user === 'HR') && (
+                            <NavItem icon={<CheckCircle2 size={18}/>} label="HR Approval Portal" active={activeTab === 'HR_PANEL'} onClick={() => setActiveTab('HR_PANEL')} />
+                        )}
                         {user === 'SBH' && <NavItem icon={<Scan size={18}/>} label="QR Station" active={activeTab === 'PRINT_QR'} onClick={() => setActiveTab('PRINT_QR')} />}
                     </div>
                     <div className="p-6 border-t border-slate-50"><button onClick={onLogout} className="w-full flex items-center gap-3 text-slate-400 hover:text-rose-500 font-black text-[10px] uppercase transition-colors"><LogOut size={16} /> Logout</button></div>

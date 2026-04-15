@@ -10,6 +10,7 @@ const LoginPanel = ({ onLogin }) => {
 
   const users = [
     { name: 'SBH', password: 'Naman@22@12' },
+    { name: 'HR', password: 'Hr@Sbh' },
     { name: 'CRM', password: 'SBH@999' },
     { name: 'RECEPTION', password: 'SBH#123' }
   ];
@@ -74,6 +75,7 @@ const LoginPanel = ({ onLogin }) => {
                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-5 px-6 appearance-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all outline-none font-bold text-slate-700 cursor-pointer"
               >
                 <option value="SBH">Administrator (SBH)</option>
+                <option value="HR">HR Department (Smile Award)</option>
                 <option value="CRM">CRM Department</option>
                 <option value="RECEPTION">Reception & Billing</option>
               </select>

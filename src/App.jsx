@@ -8,8 +8,10 @@ function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'survey') {
-      setIsPublicMode(true);
+    const mode = params.get('mode');
+    
+    if (mode === 'survey' || mode === 'smile_award') {
+      setIsPublicMode(mode); // Store the mode type
     }
 
     const savedUser = localStorage.getItem('auth_user');
@@ -25,8 +27,8 @@ function App() {
 
   if (isPublicMode) {
     return (
-      <div className="min-h-screen bg-[#f1f5f9]">
-        <SheetDashboard isPublic={true} />
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <SheetDashboard isPublic={true} publicType={isPublicMode} />
       </div>
     );
   }

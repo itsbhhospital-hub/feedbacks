@@ -136,10 +136,9 @@ const DataTable = ({ data, type, onEdit }) => (
 const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
     const filteredStats = useMemo(() => {
         const target = (selectedMonth || "").trim().toLowerCase();
-        // Robust matching: Check if sheet data month includes target or vice versa
         return (stats.all || []).filter(s => {
             const m = (s.month || "").trim().toLowerCase();
-            return m === target || m.includes(target.split(' ')[0]) && m.includes(target.split(' ')[1]);
+            return m === target || m.includes(target);
         });
     }, [stats.all, selectedMonth]);
 
@@ -195,20 +194,21 @@ const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
 
 const HRApprovalPanel = ({ stats, winners, onApprove }) => {
     const [submitting, setSubmitting] = useState(false);
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
-    // Improved month string for comparison
     const now = new Date();
-    const currentMonthLabel = now.toLocaleString('en-US', { month: 'long' }).toLowerCase();
+    const currentMonthLabel = months[now.getMonth()].toLowerCase();
     const currentYearLabel = now.getFullYear().toString();
     
+    // Exact filter: Check if row month contains current month and year
     const candidates = (stats.all || []).filter(c => {
         const m = (c.month || "").trim().toLowerCase();
         return m.includes(currentMonthLabel) && m.includes(currentYearLabel);
     });
 
     const isWinnerApproved = (name, month) => {
-        return winners.some(w => 
-            w.employee_name.toLowerCase() === name.toLowerCase() && 
+        return (winners || []).some(w => 
+            (w.employee_name || "").toLowerCase() === (name || "").toLowerCase() && 
             (w.month || "").toLowerCase().includes(currentMonthLabel)
         );
     };
@@ -219,6 +219,14 @@ const HRApprovalPanel = ({ stats, winners, onApprove }) => {
                 <table className="w-full text-left">
                     <thead><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50"><th className="pb-5 px-2">Candidate</th><th className="pb-5 px-2">Dept</th><th className="pb-5 px-2">Votes</th><th className="pb-5 px-2 text-right">Action</th></tr></thead>
                     <tbody className="divide-y divide-slate-50">
+                        {candidates.length === 0 && stats.all && stats.all.length > 0 && (
+                            <tr>
+                                <td colSpan="4" className="py-10 text-center bg-rose-50 rounded-xl">
+                                    <p className="text-[10px] font-black text-rose-600 uppercase mb-2">Notice: {stats.all.length} entries found, but none match "{currentMonthLabel} {currentYearLabel}"</p>
+                                    <p className="text-[9px] text-slate-400 font-bold">Latest in Sheet: {(stats.all[0]?.month || "None")}</p>
+                                </td>
+                            </tr>
+                        )}
                         {candidates.map((c, i) => {
                             const isApproved = isWinnerApproved(c.name, c.month);
                             return (
@@ -234,7 +242,7 @@ const HRApprovalPanel = ({ stats, winners, onApprove }) => {
                                 </tr>
                             );
                         })}
-                        {candidates.length === 0 && <tr><td colSpan="4" className="py-20 text-center text-[10px] font-black text-slate-300 uppercase">No pending nominations for {currentMonthLabel} {currentYearLabel}</td></tr>}
+                        {(stats.all || []).length === 0 && <tr><td colSpan="4" className="py-20 text-center text-[10px] font-black text-slate-300 uppercase">No data received from Cloud. Please check if you have run "setupSheets" in Apps Script.</td></tr>}
                     </tbody>
                 </table>
             </div>

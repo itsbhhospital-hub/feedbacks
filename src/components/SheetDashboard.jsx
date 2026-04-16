@@ -5,7 +5,7 @@ import {
     CheckCircle2, AlertCircle, X, Save, LogOut, Hospital, ChevronRight,
     User, ClipboardList, Stethoscope, Scan, TrendingUp, BarChart3,
     Calendar, Layers, Download, Globe, Heart, Award, Trophy, Smile,
-    TrendingDown, Menu, MapPin, Sparkles, Briefcase
+    TrendingDown, Menu, MapPin, Sparkles, Briefcase, Mail, Phone, CalendarCheck
 } from 'lucide-react';
 import SmileAwardForm from './SmileAwardForm';
 import { QRCodeSVG } from 'qrcode.react';
@@ -134,23 +134,38 @@ const DataTable = ({ data = [], type, onEdit }) => (
 );
 
 const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange, loading }) => {
+    const [departmentFilter, setDepartmentFilter] = useState('ALL');
+
     const filteredStats = useMemo(() => {
         const target = (selectedMonth || "").trim().toLowerCase();
-        return (stats.all || []).filter(s => {
+        let list = (stats.all || []).filter(s => {
             const m = (s.month || "").trim().toLowerCase();
             return m === target || m.includes(target);
         });
-    }, [stats.all, selectedMonth]);
+        if (departmentFilter !== 'ALL') {
+            list = list.filter(s => (s.dept || "").toLowerCase() === departmentFilter.toLowerCase());
+        }
+        return list;
+    }, [stats.all, selectedMonth, departmentFilter]);
 
     const approvedWinners = useMemo(() => {
         const target = (selectedMonth || "").trim().toLowerCase();
-        return (winners || []).filter(w => (w.month || "").trim().toLowerCase().includes(target));
-    }, [winners, selectedMonth]);
+        let list = (winners || []).filter(w => (w.month || "").trim().toLowerCase().includes(target));
+        if (departmentFilter !== 'ALL') {
+             list = list.filter(w => (w.department || "").toLowerCase() === departmentFilter.toLowerCase());
+        }
+        return list;
+    }, [winners, selectedMonth, departmentFilter]);
 
     const months = useMemo(() => {
         const set = new Set((stats.all || []).map(s => (s.month || "").trim()));
         set.add(new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }));
         return Array.from(set).filter(Boolean).sort((a,b) => new Date(b) - new Date(a));
+    }, [stats.all]);
+
+    const departments = useMemo(() => {
+        const set = new Set((stats.all || []).map(s => s.dept || "General"));
+        return Array.from(set).filter(Boolean).sort();
     }, [stats.all]);
 
     if (loading) return <SectionLoader message="Syncing leaderboard..." />;
@@ -162,9 +177,18 @@ const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange, loading
                     <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter leading-none mb-2">Excellence <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Stars</span></h2>
                     <p className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">Honoring our department champions</p>
                 </div>
-                <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl shadow-xl shadow-slate-100 border border-slate-100 min-w-[200px]">
-                    <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600"><Calendar size={20} /></div>
-                    <select value={selectedMonth} onChange={(e) => onMonthChange(e.target.value)} className="flex-1 bg-transparent border-none outline-none font-black text-[11px] uppercase tracking-widest text-slate-700 cursor-pointer">{months.map(m => <option key={m} value={m}>{m}</option>)}</select>
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl shadow-xl shadow-slate-100 border border-slate-100 min-w-[200px]">
+                        <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600"><Briefcase size={20} /></div>
+                        <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)} className="flex-1 bg-transparent border-none outline-none font-black text-[11px] uppercase tracking-widest text-slate-700 cursor-pointer">
+                            <option value="ALL">All Depts</option>
+                            {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl shadow-xl shadow-slate-100 border border-slate-100 min-w-[200px]">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600"><Calendar size={20} /></div>
+                        <select value={selectedMonth} onChange={(e) => onMonthChange(e.target.value)} className="flex-1 bg-transparent border-none outline-none font-black text-[11px] uppercase tracking-widest text-slate-700 cursor-pointer">{months.map(m => <option key={m} value={m}>{m}</option>)}</select>
+                    </div>
                 </div>
             </div>
 
@@ -230,7 +254,17 @@ const HRApprovalPanel = ({ stats, winners, onApprove, loading }) => {
         if (m.includes('T') && m.endsWith('Z')) {
             try { const d = new Date(m); m = months[d.getUTCMonth()] + " " + d.getUTCFullYear(); } catch(e) {}
         }
-        return m.toLowerCase().includes(currentMonthLabel) && m.toLowerCase().includes(currentYearLabel);
+        const matchesMonth = m.toLowerCase().includes(currentMonthLabel) && m.toLowerCase().includes(currentYearLabel);
+        
+        // Exclude already approved candidates from pending view completely
+        const isApprovedAlready = (winners || []).some(w => 
+            (w.employee_name || "").toLowerCase() === (c.name || "").toLowerCase() && 
+            (w.department || "").toLowerCase() === (c.dept || "").toLowerCase() &&
+            (w.month || "").toLowerCase().includes(currentMonthLabel)
+        );
+
+        return matchesMonth && !isApprovedAlready;
+
     }).reduce((acc, curr) => {
         const dept = curr.dept || 'General';
         if (!acc[dept]) acc[dept] = [];
@@ -279,18 +313,13 @@ const HRApprovalPanel = ({ stats, winners, onApprove, loading }) => {
                         <table className="w-full text-left">
                             <tbody className="divide-y divide-slate-50">
                                 {candidates.map((c, i) => {
-                                    const approved = isWinnerApproved(c.name, c.dept);
                                     return (
                                         <tr key={i} className="group hover:bg-slate-50/50 transition-all">
                                             <td className="px-10 py-7"><div><p className="font-black text-slate-800 uppercase text-xs leading-none mb-1">{c.name}</p><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic">{c.votes} Overall Votes</p></div></td>
                                             <td className="px-10 py-7 text-right">
-                                                {approved ? (
-                                                    <div className="inline-flex items-center gap-3 px-6 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest"><CheckCircle2 size={16} /> Already Approved</div>
-                                                ) : (
-                                                    <button disabled={submitting === c.name} onClick={() => handleApproved(c)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-200 transition-all disabled:opacity-50">
-                                                        {submitting === c.name ? "Processing..." : "Approve as Star"}
-                                                    </button>
-                                                )}
+                                                <button disabled={submitting === c.name} onClick={() => handleApproved(c)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-200 transition-all disabled:opacity-50">
+                                                    {submitting === c.name ? "Processing..." : "Approve as Star"}
+                                                </button>
                                             </td>
                                         </tr>
                                     );
@@ -300,6 +329,96 @@ const HRApprovalPanel = ({ stats, winners, onApprove, loading }) => {
                     </div>
                 </div>
             ))}
+        </div>
+    );
+};
+
+// --- EMPLOYEE ROSTER MODULE ---
+const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff }) => {
+    const [submitting, setSubmitting] = useState(false);
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({ name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '' });
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await fetch(smileScriptUrl, {
+                method: 'POST', mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'add_staff', ...formData })
+            });
+            setShowForm(false);
+            setFormData({ name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '' });
+            fetchStaff(); // Refresh the global list
+            alert("New employee successfully added to Master Directory!");
+        } catch(e) {
+            alert("Error saving employee.");
+        }
+        setSubmitting(false);
+    };
+
+    return (
+        <div className="space-y-12 animate-in fade-in pb-20">
+            <div className="px-1 flex flex-col md:flex-row justify-between md:items-end gap-6">
+                <div>
+                    <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter">Staff <span className="text-emerald-600">Roster</span></h2>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Manage employee records and automated reminders</p>
+                </div>
+                <button onClick={() => setShowForm(!showForm)} className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3">
+                    {showForm ? <><X size={16} /> Hide Form</> : <><Plus size={16} /> Add Employee</>}
+                </button>
+            </div>
+
+            <AnimatePresence>
+                {showForm && (
+                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                        <form onSubmit={handleSubmit} className="bg-white rounded-[3rem] p-10 md:p-14 border border-slate-100 shadow-2xl shadow-slate-100 mb-10">
+                            <h3 className="text-xl font-black text-slate-800 uppercase mb-8 flex items-center gap-3"><Users className="text-emerald-500" /> New Employee Profile</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Full Name *</label><input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="e.g. Rahul Sharma" /></div>
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Department *</label><input required value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="e.g. OPD" /></div>
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Role/Position</label><input value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="e.g. Senior Consultant" /></div>
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Mobile Number (WhatsApp) *</label><input required value={formData.mobile} onChange={e => setFormData({...formData, mobile: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="10-digit number" /></div>
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Email Address</label><input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="Optional" /></div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 pt-8 border-t border-slate-100">
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2"><CalendarCheck size={14} className="text-orange-500"/> Date of Birth</label><input type="date" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none uppercase" /></div>
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2"><Award size={14} className="text-emerald-500"/> Date of Joining</label><input type="date" value={formData.doj} onChange={e => setFormData({...formData, doj: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none uppercase" /></div>
+                            </div>
+                            <div className="flex justify-end">
+                                <button disabled={submitting} type="submit" className="w-full md:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-600 transition-all shadow-xl shadow-slate-200 disabled:opacity-50">
+                                    {submitting ? "Saving..." : "Save Employee Record"}
+                                </button>
+                            </div>
+                        </form>
+                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-100">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead><tr className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 bg-slate-50/80 border-b border-slate-100"><th className="px-10 py-6">ID & Name</th><th className="px-10 py-6">Role & Dept</th><th className="px-10 py-6">Contact</th><th className="px-10 py-6">Important Dates</th></tr></thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {staffList.map((s, i) => (
+                                <tr key={i} className="hover:bg-slate-50/50 transition-all">
+                                    <td className="px-10 py-6"><div><p className="font-black text-slate-800 uppercase text-[11px] mb-1">{s.Name}</p><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{s.Staff_ID}</p></div></td>
+                                    <td className="px-10 py-6"><div><p className="font-black text-slate-700 uppercase text-[10px] mb-1">{s.Department}</p><p className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{s.Role || 'Staff'}</p></div></td>
+                                    <td className="px-10 py-6"><div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 tracking-widest"><Phone size={12} className="text-slate-400" /> {s.Mobile || 'N/A'}</div></td>
+                                    <td className="px-10 py-6">
+                                        <div className="space-y-2">
+                                            {s.DOB && <div className="flex items-center gap-2 text-[9px] font-bold text-orange-500 uppercase tracking-widest"><CalendarCheck size={12} /> DOB: {s.DOB.substring(s.DOB.length - 5) !== '00-00' ? s.DOB : 'N/A'}</div>}
+                                            {s.DOJ && <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-500 uppercase tracking-widest"><Award size={12} /> Join: {s.DOJ.substring(0,4)}</div>}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {staffList.length === 0 && <tr><td colSpan="4" className="text-center py-20 text-[10px] font-black uppercase text-slate-400">No staff records found. Add one above.</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };
@@ -318,6 +437,7 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [smileStats, setSmileStats] = useState({ all: [] });
     const [smileWinnersList, setSmileWinnersList] = useState([]);
+    const [staffList, setStaffList] = useState([]);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }));
 
     const scriptUrl = 'https://script.google.com/macros/s/AKfycbx9ZM4dSz8Yu3jmuVhWWgBdxCuUjeNRF7WXEio_hhs6JFfHvktAFraoy7Mtar6sL3c/exec';
@@ -326,16 +446,18 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [opd, sono, leaderboard, winners] = await Promise.all([
+            const [opd, sono, leaderboard, winners, staff] = await Promise.all([
                 fetch(`${scriptUrl}?sheet=OPD_Records&date=${selectedDate}`).then(r => r.json()),
                 fetch(`${scriptUrl}?sheet=SONO_Records&date=${selectedDate}`).then(r => r.json()),
                 fetch(`${smileScriptUrl}?action=get_leaderboard`).then(r => r.json()),
-                fetch(`${smileScriptUrl}?action=get_winners`).then(r => r.json())
+                fetch(`${smileScriptUrl}?action=get_winners`).then(r => r.json()),
+                fetch(`${smileScriptUrl}?action=get_staff`).then(r => r.json())
             ]);
             setOpdData(opd || []);
             setSonoData(sono || []);
             setSmileStats({ all: Array.isArray(leaderboard) ? leaderboard : [] });
             setSmileWinnersList(Array.isArray(winners) ? winners : []);
+            setStaffList(Array.isArray(staff) ? staff : []);
         } catch (err) { console.error('Fetch error:', err); }
         setLoading(false);
     };
@@ -374,7 +496,10 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                             <NavItem icon={<Award size={18}/>} label="Nominate Staff" active={activeTab === 'SMILE_AWARD'} onClick={() => handleNavClick('SMILE_AWARD')} variant="orange" />
                             <NavItem icon={<Trophy size={18}/>} label="Leaderboard" active={activeTab === 'SMILE_STATS'} onClick={() => handleNavClick('SMILE_STATS')} variant="orange" />
                             {(user === 'SBH' || user === 'HR') && (
-                                <NavItem icon={<CheckCircle2 size={18}/>} label="Approval Portal" active={activeTab === 'HR_PANEL'} onClick={() => handleNavClick('HR_PANEL')} variant="orange" />
+                                <>
+                                    <NavItem icon={<Users size={18}/>} label="Employee List" active={activeTab === 'EMPLOYEE_ROSTER'} onClick={() => handleNavClick('EMPLOYEE_ROSTER')} variant="orange" />
+                                    <NavItem icon={<CheckCircle2 size={18}/>} label="Approval Portal" active={activeTab === 'HR_PANEL'} onClick={() => handleNavClick('HR_PANEL')} variant="orange" />
+                                </>
                             )}
                             {user === 'SBH' && <NavItem icon={<Scan size={18}/>} label="QR Station" active={activeTab === 'PRINT_QR'} onClick={() => handleNavClick('PRINT_QR')} variant="orange" />}
                         </div>
@@ -412,6 +537,7 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                         {activeTab === 'SMILE_AWARD' && <SmileAwardForm key="smile-award" onSubmissionSuccess={() => setTimeout(fetchData, 2000)} />}
                         {activeTab === 'SMILE_STATS' && <SmileAwardStats stats={smileStats} winners={smileWinnersList} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} loading={loading} />}
                         {activeTab === 'HR_PANEL' && <HRApprovalPanel stats={smileStats} winners={smileWinnersList} onApprove={async(d)=> { await fetch(smileScriptUrl,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'approve_winner',...d})}); fetchData(); }} loading={loading} />}
+                        {activeTab === 'EMPLOYEE_ROSTER' && <EmployeeRoster staffList={staffList} fetchStaff={fetchData} smileScriptUrl={smileScriptUrl} />}
                         {activeTab === 'PRINT_QR' && <PrintQRSection />}
                         {(activeTab === 'OPD' || activeTab === 'RADIOLOGY') && <DataTable data={activeTab === 'RADIOLOGY' ? sonoData : opdData} type={activeTab} onEdit={setEditingRow} />}
                         {activeTab === 'LASIK_FORM' && <LasikSurvey isPublic={true} />}

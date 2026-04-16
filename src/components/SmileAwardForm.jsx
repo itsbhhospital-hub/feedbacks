@@ -37,7 +37,8 @@ const SmileAwardForm = ({ onSubmissionSuccess }) => {
         fetchStaff();
     }, []);
 
-    const handleNomineeChange = (name) => {
+    const handleNomineeChange = (label) => {
+        const name = label.split(' (')[0];
         const exists = staffList.find(s => s.Name === name);
         if (exists) {
             setFormData(prev => ({ ...prev, employeeId: exists.Staff_ID, employeeName: exists.Name, department: exists.Department, isNewNominee: false }));
@@ -46,7 +47,8 @@ const SmileAwardForm = ({ onSubmissionSuccess }) => {
         }
     };
 
-    const handleVoterChange = (name) => {
+    const handleVoterChange = (label) => {
+        const name = label.split(' (')[0];
         const exists = staffList.find(s => s.Name === name);
         if (exists) {
             setFormData(prev => ({ ...prev, voterId: exists.Staff_ID, voterName: exists.Name, isNewVoter: false }));
@@ -112,7 +114,7 @@ const SmileAwardForm = ({ onSubmissionSuccess }) => {
                             label="Your Name (The Voter)" 
                             placeholder="Type or select your name"
                             icon={<HandHeart size={18} className="text-orange-500" />} 
-                            options={staffList.map(s => s.Name)} 
+                            options={staffList.map(s => s.Department && s.Department !== 'General' ? `${s.Name} (${s.Department})` : s.Name)} 
                             value={formData.voterName}
                             onChange={handleVoterChange}
                             required
@@ -122,7 +124,7 @@ const SmileAwardForm = ({ onSubmissionSuccess }) => {
                             label="Nominee (The Star)" 
                             placeholder="Who deserves the award?"
                             icon={<Sparkles size={18} className="text-emerald-500" />} 
-                            options={staffList.map(s => s.Name)} 
+                            options={staffList.map(s => s.Department && s.Department !== 'General' ? `${s.Name} (${s.Department})` : s.Name)} 
                             value={formData.employeeName}
                             onChange={handleNomineeChange}
                             required

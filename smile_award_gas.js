@@ -6,14 +6,20 @@
 function setupSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   
-  // 1. Staff Master
+  // 1. Staff Master (Expanded for Employee List)
   let staffSheet = ss.getSheetByName('Staff_Master');
   if (!staffSheet) {
     staffSheet = ss.insertSheet('Staff_Master');
-    staffSheet.appendRow(['Staff_ID', 'Name', 'Department', 'Email', 'Mobile']);
-    staffSheet.getRange("A1:E1").setBackground("#2E7D32").setFontColor("white").setFontWeight("bold");
+    staffSheet.appendRow(['Staff_ID', 'Name', 'Department', 'Role', 'Email', 'Mobile', 'DOB', 'DOJ']);
+    staffSheet.getRange("A1:H1").setBackground("#2E7D32").setFontColor("white").setFontWeight("bold");
     // Initial Example
-    staffSheet.appendRow(['ST001', 'Rahul Sharma', 'OPD', 'rahul@gmail.com', '9876543210']);
+    staffSheet.appendRow(['ST001', 'Rahul Sharma', 'OPD', 'Doctor', 'rahul@gmail.com', '9876543210', '1990-05-15', '2023-01-10']);
+  } else {
+    // Check if we need to upgrade old sheet headers
+    const currentHeaders = staffSheet.getRange("A1:E1").getValues()[0];
+    if (currentHeaders.length === 5 && currentHeaders[0] === 'Staff_ID') {
+        staffSheet.getRange("A1:H1").setValues([['Staff_ID', 'Name', 'Department', 'Role', 'Email', 'Mobile', 'DOB', 'DOJ']]);
+    }
   }
 
   // 2. Smile Entries
@@ -56,6 +62,7 @@ function doPost(e) {
   try {
     if (action === 'save_vote') return saveVote(data);
     if (action === 'approve_winner') return approveWinner(data);
+    if (action === 'add_staff') return addStaff(data);
   } catch (err) {
     return createJsonResponse({ success: false, error: err.toString() });
   }
@@ -91,13 +98,13 @@ function saveVote(res) {
   // Self-Learning: Add Nominee to Master if new
   if (res.isNewNominee && res.employeeName) {
     const nextId = "ST" + (staffSheet.getLastRow() + 100);
-    staffSheet.appendRow([nextId, res.employeeName, res.department || 'General', '', '']);
+    staffSheet.appendRow([nextId, res.employeeName, res.department || 'General', 'Staff', '', '', '', '']);
   }
 
   // Self-Learning: Add Voter to Master if new
   if (res.isNewVoter && res.voterName) {
     const nextId = "ST" + (staffSheet.getLastRow() + 101);
-    staffSheet.appendRow([nextId, res.voterName, 'General', '', '']);
+    staffSheet.appendRow([nextId, res.voterName, 'General', 'Staff', '', '', '', '']);
   }
 
   entriesSheet.appendRow([
@@ -136,23 +143,54 @@ function getLeaderboardData() {
 function approveWinner(res) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Final_Winner');
+  const staffSheet = ss.getSheetByName('Staff_Master');
   const now = new Date();
   const approvedAt = Utilities.formatDate(now, "GMT+5:30", "yyyy-MM-dd HH:mm:ss");
   
+  // Try to find mobile number from Staff_Master
+  let mobileToMessage = res.mobile || 'N/A';
+  if (mobileToMessage === 'N/A' || !mobileToMessage) {
+      const staffData = staffSheet.getDataRange().getValues();
+      for(let i=1; i<staffData.length; i++) {
+          if(staffData[i][1].toLowerCase() === res.name.toLowerCase() && staffData[i][5]) {
+              mobileToMessage = staffData[i][5]; // Mobile is index 5
+              break;
+          }
+      }
+  }
+
   sheet.appendRow([
     res.month,
-    res.department,
+    res.department || res.dept,
     res.name,
     res.votes,
     res.email || 'N/A',
-    res.mobile || 'N/A',
+    mobileToMessage,
     'Approved',
     approvedAt
   ]);
   
-  // Trigger automation (WhatsApp/Email Placeholder)
-  sendRecognition(res);
+  // Trigger automation
+  sendRecognition({ ...res, mobile: mobileToMessage });
   
+  return createJsonResponse({ success: true });
+}
+
+function addStaff(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const staffSheet = ss.getSheetByName('Staff_Master');
+  const nextId = "ST" + (staffSheet.getLastRow() + 100);
+  
+  staffSheet.appendRow([
+    nextId,
+    data.name,
+    data.department,
+    data.role || 'Staff',
+    data.email || '',
+    data.mobile || '',
+    data.dob || '',
+    data.doj || ''
+  ]);
   return createJsonResponse({ success: true });
 }
 
@@ -173,7 +211,7 @@ function getFinalWinners() {
 }
 
 function sendRecognition(data) {
-  if (!data.mobile || data.mobile === 'N/A') {
+  if (!data.mobile || data.mobile === 'N/A' || data.mobile.trim() === '') {
     console.log("No mobile number provided for " + data.name + ". Skipping WhatsApp.");
     return;
   }
@@ -183,22 +221,80 @@ function sendRecognition(data) {
   const mobile = data.mobile;
   const name = data.name;
   const month = data.month;
+  const dept = data.department || data.dept;
   
-  const message = "🎉 Congratulations " + name + "! You have been awarded the *Smile Award* for " + month + " at SBH Hospital! 🏆\n\nYour hard work and dedication to patient excellence inspire us all. Keep shining and keep smiling! 😊";
+  const message = `🎉 Congratulations *${name}*! You have been awarded the *Smile Award* for ${month} from the ${dept} department at SBH Hospital! 🏆\n\nYour hard work and dedication inspire us all. Keep shining! 😊`;
 
+  sendWhatsApp(mobile, message);
+}
+
+function sendWhatsApp(mobile, message) {
+  const username = "SBH HOSPITAL";
+  const password = "123456789";
   const baseUrl = "https://app.messageautosender.com/message/new";
   const finalUrl = baseUrl + 
     "?username=" + encodeURIComponent(username) +
     "&password=" + encodeURIComponent(password) +
     "&receiverMobileNo=" + encodeURIComponent(mobile) +
-    "&receiverName=" + encodeURIComponent(name) +
     "&message=" + encodeURIComponent(message);
 
   try {
-    const response = UrlFetchApp.fetch(finalUrl);
-    console.log("WhatsApp API Response: " + response.getContentText());
+    UrlFetchApp.fetch(finalUrl);
   } catch (e) {
     console.error("Failed to send WhatsApp message: " + e.toString());
+  }
+}
+
+// ==========================================
+// AUTOMATION: RUN THIS DAILY VIA TRIGGERS
+// ==========================================
+function dailyCheckEvents() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Staff_Master');
+  if(!sheet) return;
+  const data = sheet.getDataRange().getDisplayValues();
+  if(data.length <= 1) return;
+
+  const today = new Date();
+  // Get MM-DD format to match without dealing with timezone shifts easily
+  const todayStr = Utilities.formatDate(today, "GMT+5:30", "MM-dd");
+  const todayYear = parseInt(Utilities.formatDate(today, "GMT+5:30", "yyyy"));
+
+  // Start from row 1 (exclude header)
+  for(let i=1; i<data.length; i++) {
+    const name = data[i][1];
+    const mobile = data[i][5];
+    const dob = data[i][6]; // e.g. 1990-05-15
+    const doj = data[i][7]; // e.g. 2023-01-10
+    
+    if(!mobile || mobile.trim() === '') continue;
+
+    // Check Birthday
+    if(dob && dob.length >= 5) {
+      // dob format should ideally be YYYY-MM-DD or standard display
+      // If we extract the last 5 chars of YYYY-MM-DD it gets MM-DD
+      const dobStr = dob.substring(dob.length - 5); 
+      if(dobStr === todayStr) {
+         const msg = `🎂 Happy Birthday *${name}*! 🎉\n\nWishing you a fantastic day filled with joy and success from all of us at SBH Hospital. Have a great year ahead!`;
+         sendWhatsApp(mobile, msg);
+      }
+    }
+
+    // Check Anniversary
+    if(doj && doj.length >= 5) {
+      const dojStr = doj.substring(doj.length - 5);
+      if(dojStr === todayStr) {
+         let years = 0;
+         try {
+             const joinYear = parseInt(doj.substring(0, 4));
+             years = todayYear - joinYear;
+         } catch(e) {}
+         
+         if(years > 0) {
+             const msg = `🌟 Happy Work Anniversary *${name}*! 🎉\n\nCongratulations on completing ${years} wonderful year(s) with us at SBH Hospital! We truly appreciate your hard work and dedication.`;
+             sendWhatsApp(mobile, msg);
+         }
+      }
+    }
   }
 }
 

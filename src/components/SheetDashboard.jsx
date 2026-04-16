@@ -357,20 +357,50 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const isEditing = !!formData.staffId;
+
+        if (!isEditing) {
+             const isDuplicate = staffList.some(s => 
+                 (formData.mobile && s.Mobile === formData.mobile) || 
+                 (formData.email && formData.email !== '' && s.Email === formData.email)
+             );
+             if (isDuplicate) {
+                 alert("Duplicate Employee Detected! An employee with this Mobile Number or Email already exists.");
+                 return;
+             }
+        }
+
         setSubmitting(true);
         try {
             await fetch(smileScriptUrl, {
                 method: 'POST', mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: formData.staffId ? 'edit_staff' : 'add_staff', ...formData })
+                body: JSON.stringify({ action: isEditing ? 'edit_staff' : 'add_staff', ...formData })
             });
+            
+            await new Promise(r => setTimeout(r, 1500));
+            
             setShowForm(false);
             fetchStaff();
             setFormData({ staffId: '', name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '', dol: '' });
+            alert(isEditing ? "Successfully updated!" : "Successfully registered!");
         } catch(e) {
             alert("Error saving employee.");
         }
         setSubmitting(false);
+    };
+
+    const handleManualReminder = async (s, type) => {
+        if (!confirm(`Send ${type} WhatsApp reminder to ${s.Name}?`)) return;
+        try {
+            await fetch(smileScriptUrl, {
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'send_manual_reminder', type, mobile: s.Mobile, name: s.Name, years: type === 'anniversary' && s.DOJ ? new Date().getFullYear() - parseInt(s.DOJ.substring(0,4)) : 0 })
+            });
+            alert("Reminder triggered!");
+        } catch(e) {
+            alert("Error sending reminder");
+        }
     };
 
     return (
@@ -449,8 +479,14 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
                                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-widest rounded"><LogOut size={10}/> Left: {cleanDol}</div>
                                             ) : (
                                                 <>
-                                                    {s.DOB && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isBirthday ? 'text-rose-500 animate-pulse' : 'text-orange-500'}`}><CalendarCheck size={12} /> {isBirthday ? 'TODAY IS BIRTHDAY! 🎉' : `DOB: ${cleanDob}`}</div>}
-                                                    {s.DOJ && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isWorkAnniv ? 'text-indigo-500 animate-pulse' : 'text-emerald-500'}`}><Award size={12} /> {isWorkAnniv ? 'WORK ANNIVERSARY! 🎊' : `JOIN: ${cleanDoj}`}</div>}
+                                                    {s.DOB && <div className={`flex items-center justify-between gap-2 text-[9px] font-bold uppercase tracking-widest ${isBirthday ? 'text-rose-500 animate-pulse' : 'text-orange-500'}`}>
+                                                        <span><CalendarCheck size={12} className="inline mr-1" /> {isBirthday ? 'TODAY IS BIRTHDAY! 🎉' : `DOB: ${cleanDob}`}</span>
+                                                        {isBirthday && <button onClick={() => handleManualReminder(s, 'birthday')} className="px-2 py-1 bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white rounded text-[8px] transition-colors shadow-sm">Send WhatsApp</button>}
+                                                    </div>}
+                                                    {s.DOJ && <div className={`flex items-center justify-between gap-2 text-[9px] font-bold uppercase tracking-widest ${isWorkAnniv ? 'text-indigo-500 animate-pulse' : 'text-emerald-500'}`}>
+                                                        <span><Award size={12} className="inline mr-1" /> {isWorkAnniv ? 'WORK ANNIVERSARY! 🎊' : `JOIN: ${cleanDoj}`}</span>
+                                                        {isWorkAnniv && <button onClick={() => handleManualReminder(s, 'anniversary')} className="px-2 py-1 bg-indigo-50 hover:bg-indigo-500 text-indigo-500 hover:text-white rounded text-[8px] transition-colors shadow-sm">Send WhatsApp</button>}
+                                                    </div>}
                                                 </>
                                             )}
                                         </div>

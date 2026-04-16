@@ -64,6 +64,7 @@ function doPost(e) {
     if (action === 'approve_winner') return approveWinner(data);
     if (action === 'add_staff') return addStaff(data);
     if (action === 'edit_staff') return editStaff(data);
+    if (action === 'send_manual_reminder') return sendManualReminder(data);
   } catch (err) {
     return createJsonResponse({ success: false, error: err.toString() });
   }
@@ -232,6 +233,20 @@ function getFinalWinners() {
         return obj;
     });
     return createJsonResponse(winners);
+}
+
+function sendManualReminder(data) {
+    if (!data.mobile || data.mobile.trim() === '') return createJsonResponse({ success: false, message: "No mobile" });
+    let msg = "";
+    if (data.type === 'birthday') {
+        msg = `🎂 Happy Birthday *${data.name}*! 🎉\n\nWishing you a fantastic day filled with joy and success from all of us! Have a great year ahead!\n\n- *SBH Group Of Hospitals*`;
+    } else if (data.type === 'anniversary') {
+        const yearsStr = data.years ? ` ${data.years} ` : ' ';
+        msg = `🌟 Happy Work Anniversary *${data.name}*! 🎊\n\nCongratulations on completing${yearsStr}wonderful year(s) with us! We truly appreciate your hard work and dedication.\n\n- *SBH Group Of Hospitals*`;
+    }
+    
+    if (msg) sendWhatsApp(data.mobile, msg);
+    return createJsonResponse({ success: true, message: "Reminder sent" });
 }
 
 function sendRecognition(data) {

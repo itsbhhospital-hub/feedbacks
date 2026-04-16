@@ -91,6 +91,48 @@ const StatCard = ({ icon, label, value, color, gradient }) => (
     </div>
 );
 
+const DataTable = ({ data = [], type, onEdit }) => (
+    <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+            <table className="w-full text-left">
+                <thead className="bg-slate-50/50">
+                    <tr>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Identity</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Details</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Consultant</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    {data.map(row => (
+                        <tr key={row.id} className="group hover:bg-slate-50/50 transition-colors">
+                            <td className="px-8 py-5">
+                                <p className="font-bold text-slate-800 leading-tight">{row.name}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    {row.mrd_number && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">MRD #{row.mrd_number}</span>}
+                                    <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{formatDateReadable(row.date)}</span>
+                                </div>
+                            </td>
+                            <td className="px-8 py-5">
+                                <p className="text-sm font-black text-slate-600">{row.number || row.patient_number}</p>
+                            </td>
+                            <td className="px-8 py-5">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg w-fit text-slate-700 font-black text-[10px] uppercase"><User size={14} className="text-slate-400" /> {row.dr_name}</div>
+                            </td>
+                            <td className="px-8 py-5">
+                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${row.status === 'ARRIVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>{row.status}</span>
+                            </td>
+                            <td className="px-8 py-5 text-right"><button onClick={() => onEdit(row)} className="p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit3 className="w-5 h-5" /></button></td>
+                        </tr>
+                    ))}
+                    {data.length === 0 && <tr><td colSpan="5" className="px-8 py-20 text-center text-slate-300 text-[10px] font-black uppercase tracking-widest">No matching clinical records found</td></tr>}
+                </tbody>
+            </table>
+        </div>
+    </div>
+);
+
 const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange, loading }) => {
     const filteredStats = useMemo(() => {
         const target = (selectedMonth || "").trim().toLowerCase();

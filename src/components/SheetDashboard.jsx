@@ -73,13 +73,19 @@ const SectionLoader = ({ message = "Syncing with cloud..." }) => (
 );
 
 const Footer = () => (
-    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 py-4 px-6 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 z-[100] shadow-[0_-20px_40px_rgba(0,0,0,0.03)]">
-        <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Architecture By</span>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Naman Mishra</span>
+    <footer className="fixed bottom-0 left-0 right-0 bg-white/70 backdrop-blur-3xl border-t border-white/60 py-3.5 px-6 flex flex-col md:flex-row items-center justify-center gap-3 md:gap-5 z-[100] shadow-[0_-10px_40px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="absolute -left-10 bottom-0 w-64 h-32 bg-orange-500/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute -right-10 bottom-0 w-64 h-32 bg-emerald-500/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-orange-400/30 to-emerald-400/30" />
+        
+        <div className="flex items-center gap-3 relative z-10">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Architecture By</span>
+            <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-orange-50/80 to-emerald-50/80 border border-white/80 text-[10px] font-black uppercase tracking-[0.3em] bg-gradient-to-r from-orange-600 to-emerald-600 bg-clip-text text-transparent shadow-sm">Naman Mishra</span>
         </div>
-        <div className="hidden md:block h-3 w-[2px] bg-slate-200 rounded-full" />
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 md:mt-0">© 2026 Hospital Management System</p>
+        <div className="hidden md:block h-4 w-[2px] bg-slate-200/50 rounded-full relative z-10" />
+        <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 md:mt-0 flex items-center gap-2 relative z-10">
+            © 2026 Hospital Management System
+        </p>
     </footer>
 );
 

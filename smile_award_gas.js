@@ -14,11 +14,22 @@ function setupSheets() {
     staffSheet.getRange("A1:I1").setBackground("#2E7D32").setFontColor("white").setFontWeight("bold");
     // Initial Example
     staffSheet.appendRow(['ST001', 'Rahul Sharma', 'OPD', 'Doctor', 'rahul@gmail.com', '9876543210', '1990-05-15', '2023-01-10', '']);
-  } else {
     // Check if we need to upgrade old sheet headers
     const currentHeaders = staffSheet.getRange("A1:I1").getValues()[0];
     if (currentHeaders[0] === 'Staff_ID' && currentHeaders[8] !== 'DOL') {
         staffSheet.getRange("A1:I1").setValues([['Staff_ID', 'Name', 'Department', 'Role', 'Email', 'Mobile', 'DOB', 'DOJ', 'DOL']]);
+    }
+  }
+
+  let finalSheet = ss.getSheetByName('Final_Winner');
+  if (!finalSheet) {
+    finalSheet = ss.insertSheet('Final_Winner');
+    finalSheet.appendRow(['Month', 'Department', 'Employee_Name', 'Votes', 'Email', 'Mobile', 'Status', 'Approved_At']);
+  } else {
+    const fwHeaders = finalSheet.getRange("A1:H1").getValues()[0];
+    if ((fwHeaders[0] || '').toString().trim().toLowerCase() !== 'month') {
+      finalSheet.insertRowBefore(1);
+      finalSheet.getRange("A1:H1").setValues([['Month', 'Department', 'Employee_Name', 'Votes', 'Email', 'Mobile', 'Status', 'Approved_At']]);
     }
   }
 
@@ -236,7 +247,8 @@ function getFinalWinners() {
 }
 
 function sendManualReminder(data) {
-    if (!data.mobile || data.mobile.trim() === '') return createJsonResponse({ success: false, message: "No mobile" });
+    const mobileStr = data.mobile ? data.mobile.toString().trim() : '';
+    if (!mobileStr || mobileStr === 'N/A') return createJsonResponse({ success: false, message: "No mobile" });
     let msg = "";
     if (data.type === 'birthday') {
         msg = `🎂 Happy Birthday *${data.name}*! 🎉\n\nWishing you a fantastic day filled with joy and success from all of us! Have a great year ahead!\n\n- *SBH Group Of Hospitals*`;
@@ -250,14 +262,15 @@ function sendManualReminder(data) {
 }
 
 function sendRecognition(data) {
-  if (!data.mobile || data.mobile === 'N/A' || data.mobile.trim() === '') {
+  const mobileStr = data.mobile ? data.mobile.toString().trim() : '';
+  if (!mobileStr || mobileStr === 'N/A') {
     console.log("No mobile number provided for " + data.name + ". Skipping WhatsApp.");
     return;
   }
 
   const username = "SBH HOSPITAL";
   const password = "123456789";
-  const mobile = data.mobile;
+  const mobile = mobileStr;
   const name = data.name;
   const month = data.month;
   const dept = data.department || data.dept;

@@ -334,7 +334,7 @@ const HRApprovalPanel = ({ stats, winners, onApprove, loading }) => {
 };
 
 // --- EMPLOYEE ROSTER MODULE ---
-const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff }) => {
+const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersList }) => {
     const [submitting, setSubmitting] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '' });
@@ -401,19 +401,34 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff }) => {
                     <table className="w-full text-left">
                         <thead><tr className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 bg-slate-50/80 border-b border-slate-100"><th className="px-10 py-6">ID & Name</th><th className="px-10 py-6">Role & Dept</th><th className="px-10 py-6">Contact</th><th className="px-10 py-6">Important Dates</th></tr></thead>
                         <tbody className="divide-y divide-slate-50">
-                            {staffList.map((s, i) => (
+                            {staffList.map((s, i) => {
+                                const winCount = (smileWinnersList || []).filter(w => (w.employee_name || "").toLowerCase() === (s.Name || "").toLowerCase()).length;
+                                const todayStr = new Date().toISOString().substring(5, 10);
+                                const isBirthday = s.DOB && s.DOB.substring(s.DOB.length - 5) === todayStr;
+                                const isWorkAnniv = s.DOJ && s.DOJ.substring(s.DOJ.length - 5) === todayStr;
+
+                                return (
                                 <tr key={i} className="hover:bg-slate-50/50 transition-all">
-                                    <td className="px-10 py-6"><div><p className="font-black text-slate-800 uppercase text-[11px] mb-1">{s.Name}</p><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{s.Staff_ID}</p></div></td>
+                                    <td className="px-10 py-6">
+                                        <div>
+                                            <p className="font-black text-slate-800 uppercase text-[11px] mb-1">{s.Name}</p>
+                                            <div className="flex gap-2 items-center">
+                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{s.Staff_ID}</p>
+                                                {winCount > 0 && <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded text-[8px] font-black uppercase"><Trophy size={8} className="inline mr-1" /> {winCount}x Star</span>}
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td className="px-10 py-6"><div><p className="font-black text-slate-700 uppercase text-[10px] mb-1">{s.Department}</p><p className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{s.Role || 'Staff'}</p></div></td>
                                     <td className="px-10 py-6"><div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 tracking-widest"><Phone size={12} className="text-slate-400" /> {s.Mobile || 'N/A'}</div></td>
                                     <td className="px-10 py-6">
                                         <div className="space-y-2">
-                                            {s.DOB && <div className="flex items-center gap-2 text-[9px] font-bold text-orange-500 uppercase tracking-widest"><CalendarCheck size={12} /> DOB: {s.DOB.substring(s.DOB.length - 5) !== '00-00' ? s.DOB : 'N/A'}</div>}
-                                            {s.DOJ && <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-500 uppercase tracking-widest"><Award size={12} /> Join: {s.DOJ.substring(0,4)}</div>}
+                                            {s.DOB && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isBirthday ? 'text-rose-500 animate-pulse' : 'text-orange-500'}`}><CalendarCheck size={12} /> DOB: {s.DOB.substring(s.DOB.length - 5) !== '00-00' ? s.DOB : 'N/A'} {isBirthday && '🎉'}</div>}
+                                            {s.DOJ && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isWorkAnniv ? 'text-indigo-500 animate-pulse' : 'text-emerald-500'}`}><Award size={12} /> Join: {s.DOJ.substring(0,4)} {isWorkAnniv && '🎊'}</div>}
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                             {staffList.length === 0 && <tr><td colSpan="4" className="text-center py-20 text-[10px] font-black uppercase text-slate-400">No staff records found. Add one above.</td></tr>}
                         </tbody>
                     </table>
@@ -526,12 +541,15 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden">
             {!isPublic && (
-                <aside className={`fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-50 transition-all duration-500 w-72 shadow-[20px_0_50px_rgba(0,0,0,0.02)] flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-                    <div className="p-10 border-b border-slate-50 flex flex-col items-center group relative cursor-pointer overflow-hidden">
-                        <div className="absolute inset-0 bg-emerald-500/5 -translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                        <img src="/logo.png" className="h-20 mb-3 relative z-10 drop-shadow-lg" />
-                        <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter relative z-10">SBH <span className="text-emerald-600">Hospital</span></h1>
-                    </div>
+                <>
+                    {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} />}
+                    <aside className={`fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-50 transition-transform duration-500 w-72 shadow-[20px_0_50px_rgba(0,0,0,0.02)] flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                        <div className="p-10 border-b border-slate-50 flex flex-col items-center group relative cursor-pointer overflow-hidden">
+                            <button onClick={() => setIsSidebarOpen(false)} className="absolute top-4 right-4 lg:hidden p-2 text-slate-400 hover:text-rose-500 rounded-full hover:bg-rose-50 transition-colors z-20"><X size={20} /></button>
+                            <div className="absolute inset-0 bg-emerald-500/5 -translate-y-full group-hover:translate-y-0 transition-transform duration-500 z-0" />
+                            <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter relative z-10 text-center leading-tight mb-2">SBH Group <br/><span className="text-emerald-600">Of Hospitals</span></h1>
+                            <div className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-[8px] font-black tracking-widest uppercase text-white shadow-lg relative z-10">Automated System</div>
+                        </div>
                     <div className="p-6 flex-1 space-y-6 overflow-y-auto custom-scrollbar">
                         <NavItem icon={<BarChart3 size={18}/>} label="Dashboard" active={activeTab === 'DASHBOARD'} onClick={() => handleNavClick('DASHBOARD')} />
                         
@@ -560,6 +578,7 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                     </div>
                     <div className="p-8 border-t border-slate-50 bg-slate-50/50"><button onClick={onLogout} className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white text-rose-500 border border-rose-100 rounded-2xl font-black text-[10px] uppercase transition-all hover:bg-rose-500 hover:text-white shadow-sm active:scale-95"><LogOut size={16} /> Logout Securely</button></div>
                 </aside>
+                </>
             )}
             <div className="flex-1 flex flex-col pb-20">
                 <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40 lg:ml-72 shadow-sm">
@@ -590,8 +609,8 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                         )}
                         {activeTab === 'SMILE_AWARD' && <SmileAwardForm key="smile-award" onSubmissionSuccess={() => setTimeout(fetchData, 2000)} />}
                         {activeTab === 'SMILE_STATS' && <SmileAwardStats stats={smileStats} winners={smileWinnersList} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} loading={loading} />}
-                        {activeTab === 'HR_PANEL' && <HRApprovalPanel stats={smileStats} winners={smileWinnersList} onApprove={async(d)=> { await fetch(smileScriptUrl,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'approve_winner',...d})}); fetchData(); }} loading={loading} />}
-                        {activeTab === 'EMPLOYEE_ROSTER' && <EmployeeRoster staffList={staffList} fetchStaff={fetchData} smileScriptUrl={smileScriptUrl} />}
+                        {activeTab === 'HR_PANEL' && <HRApprovalPanel stats={smileStats} winners={smileWinnersList} onApprove={async(d)=> { await fetch(smileScriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'approve_winner',...d})}); fetchData(); }} loading={loading} />}
+                        {activeTab === 'EMPLOYEE_ROSTER' && <EmployeeRoster staffList={staffList} fetchStaff={fetchData} smileScriptUrl={smileScriptUrl} smileWinnersList={smileWinnersList} />}
                         {activeTab === 'PRINT_QR' && <PrintQRSection />}
                         {(activeTab === 'OPD' || activeTab === 'RADIOLOGY') && <DataTable data={activeTab === 'RADIOLOGY' ? sonoData : opdData} type={activeTab} onEdit={setEditingRow} />}
                         {activeTab === 'LASIK_FORM' && <LasikSurvey isPublic={true} />}

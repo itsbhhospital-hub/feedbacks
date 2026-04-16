@@ -423,6 +423,60 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff }) => {
     );
 };
 
+// --- PRINT QR MODULE ---
+const PrintQRSection = () => {
+    const urls = [
+        { label: "Smile Award Nomination", url: window.location.origin + "?type=smile_award", color: "from-orange-500 to-amber-500", icon: <Award size={20} className="text-white" /> },
+        { label: "Lasik Feedback Survey", url: window.location.origin + "?type=lasik", color: "from-emerald-500 to-teal-500", icon: <CheckCircle2 size={20} className="text-white" /> }
+    ];
+
+    const printItem = (index) => {
+        const item = document.getElementById(`qr-card-${index}`);
+        const printWindow = window.open('', '', 'width=800,height=800');
+        printWindow.document.write(`
+            <html>
+            <head><title>Print QR</title>
+            <style>
+                body { display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background: white; margin: 0; }
+                .card { text-align: center; border: 2px solid #e2e8f0; border-radius: 2rem; padding: 3rem; }
+                .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; color: #1e293b; margin-bottom: 2rem; }
+            </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div class="title">${urls[index].label}</div>
+                    ${item.querySelector('svg').outerHTML}
+                </div>
+                <script>setTimeout(() => { window.print(); window.close(); }, 500);</script>
+            </body>
+            </html>
+        `);
+    };
+
+    return (
+        <div className="space-y-12 animate-in fade-in pb-20">
+            <div className="px-1"><h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter">QR <span className="text-emerald-600">Station</span></h2><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Print scannable quick-links for your reception desk</p></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {urls.map((item, idx) => (
+                    <div key={idx} className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-xl shadow-slate-100 text-center relative overflow-hidden group">
+                        <div className={`absolute top-0 inset-x-0 h-2 bg-gradient-to-r ${item.color}`} />
+                        <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-8 shadow-xl bg-gradient-to-br ${item.color}`}>
+                            {item.icon}
+                        </div>
+                        <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-8">{item.label}</h3>
+                        <div id={`qr-card-${idx}`} className="bg-slate-50 p-6 rounded-3xl inline-block mb-8">
+                            <QRCodeSVG value={item.url} size={200} level="H" includeMargin={true} />
+                        </div>
+                        <div>
+                            <button onClick={() => printItem(idx)} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:-translate-y-1 active:translate-y-0 transition-all">Print QR Code</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 // --- MAIN COMPONENT ---
 
 const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {

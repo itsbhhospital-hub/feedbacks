@@ -438,7 +438,7 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
                                                     {winCount > 0 && <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded text-[8px] font-black uppercase"><Trophy size={8} className="inline mr-1" /> {winCount}x Star</span>}
                                                 </div>
                                             </div>
-                                            <button onClick={() => handleEdit(s)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><MessageCircle size={14} /></button>
+                                            <button onClick={() => handleEdit(s)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><Edit3 size={14} /></button>
                                         </div>
                                     </td>
                                     <td className="px-10 py-6"><div><p className="font-black text-slate-700 uppercase text-[10px] mb-1">{s.Department}</p><p className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{s.Role || 'Staff'}</p></div></td>

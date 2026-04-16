@@ -337,7 +337,23 @@ const HRApprovalPanel = ({ stats, winners, onApprove, loading }) => {
 const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersList }) => {
     const [submitting, setSubmitting] = useState(false);
     const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState({ name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '' });
+    const [formData, setFormData] = useState({ staffId: '', name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '', dol: '' });
+
+    const handleEdit = (s) => {
+        setFormData({
+            staffId: s.Staff_ID, name: s.Name, department: s.Department, role: s.Role, email: s.Email, mobile: s.Mobile, 
+            dob: s.DOB ? s.DOB.substring(0, 10) : '', 
+            doj: s.DOJ ? s.DOJ.substring(0, 10) : '', 
+            dol: s.DOL ? s.DOL.substring(0, 10) : ''
+        });
+        setShowForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleAddNew = () => {
+        setFormData({ staffId: '', name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '', dol: '' });
+        setShowForm(!showForm);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -346,12 +362,11 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
             await fetch(smileScriptUrl, {
                 method: 'POST', mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'add_staff', ...formData })
+                body: JSON.stringify({ action: formData.staffId ? 'edit_staff' : 'add_staff', ...formData })
             });
             setShowForm(false);
-            setFormData({ name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '' });
-            fetchStaff(); // Refresh the global list
-            alert("New employee successfully added to Master Directory!");
+            fetchStaff();
+            setFormData({ staffId: '', name: '', department: '', role: '', email: '', mobile: '', dob: '', doj: '', dol: '' });
         } catch(e) {
             alert("Error saving employee.");
         }
@@ -365,8 +380,8 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
                     <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter">Staff <span className="text-emerald-600">Roster</span></h2>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Manage employee records and automated reminders</p>
                 </div>
-                <button onClick={() => setShowForm(!showForm)} className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3">
-                    {showForm ? <><X size={16} /> Hide Form</> : <><Plus size={16} /> Add Employee</>}
+                <button onClick={handleAddNew} className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3">
+                    {showForm ? <><X size={16} /> Close Form</> : <><Plus size={16} /> Add Employee</>}
                 </button>
             </div>
 
@@ -374,7 +389,7 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
                 {showForm && (
                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                         <form onSubmit={handleSubmit} className="bg-white rounded-[3rem] p-10 md:p-14 border border-slate-100 shadow-2xl shadow-slate-100 mb-10">
-                            <h3 className="text-xl font-black text-slate-800 uppercase mb-8 flex items-center gap-3"><Users className="text-emerald-500" /> New Employee Profile</h3>
+                            <h3 className="text-xl font-black text-slate-800 uppercase mb-8 flex items-center gap-3"><Users className="text-emerald-500" /> {formData.staffId ? `Update ${formData.name}` : 'New Employee Profile'}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
                                 <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Full Name *</label><input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="e.g. Rahul Sharma" /></div>
                                 <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Department *</label><input required value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="e.g. OPD" /></div>
@@ -382,13 +397,14 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
                                 <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Mobile Number (WhatsApp) *</label><input required value={formData.mobile} onChange={e => setFormData({...formData, mobile: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="10-digit number" /></div>
                                 <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Email Address</label><input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none" placeholder="Optional" /></div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 pt-8 border-t border-slate-100">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 pt-8 border-t border-slate-100">
                                 <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2"><CalendarCheck size={14} className="text-orange-500"/> Date of Birth</label><input type="date" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none uppercase" /></div>
                                 <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2"><Award size={14} className="text-emerald-500"/> Date of Joining</label><input type="date" value={formData.doj} onChange={e => setFormData({...formData, doj: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-slate-800 font-bold focus:bg-white focus:border-emerald-500/30 outline-none uppercase" /></div>
+                                <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2 text-rose-500"><LogOut size={14} /> Date of Leaving</label><input type="date" value={formData.dol} onChange={e => setFormData({...formData, dol: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-5 text-rose-600 font-bold focus:bg-white focus:border-rose-500/30 outline-none uppercase" /></div>
                             </div>
                             <div className="flex justify-end">
-                                <button disabled={submitting} type="submit" className="w-full md:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-600 transition-all shadow-xl shadow-slate-200 disabled:opacity-50">
-                                    {submitting ? "Saving..." : "Save Employee Record"}
+                                <button disabled={submitting} type="submit" className={`w-full md:w-auto px-12 py-5 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl disabled:opacity-50 ${formData.staffId ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200' : 'bg-slate-900 hover:bg-emerald-600 shadow-slate-200'}`}>
+                                    {submitting ? "Saving..." : formData.staffId ? "Update Employee" : "Save Employee Record"}
                                 </button>
                             </div>
                         </form>
@@ -406,24 +422,37 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
                                 const todayStr = new Date().toISOString().substring(5, 10);
                                 const isBirthday = s.DOB && s.DOB.substring(s.DOB.length - 5) === todayStr;
                                 const isWorkAnniv = s.DOJ && s.DOJ.substring(s.DOJ.length - 5) === todayStr;
+                                const hasLeft = s.DOL && s.DOL.length > 0;
+                                const cleanDob = s.DOB ? s.DOB.substring(0, 10) : 'N/A';
+                                const cleanDoj = s.DOJ ? s.DOJ.substring(0, 10) : 'N/A';
+                                const cleanDol = s.DOL ? s.DOL.substring(0, 10) : '';
 
                                 return (
-                                <tr key={i} className="hover:bg-slate-50/50 transition-all">
+                                <tr key={i} className={`hover:bg-slate-50/50 transition-all ${hasLeft ? 'opacity-50 grayscale' : ''}`}>
                                     <td className="px-10 py-6">
-                                        <div>
-                                            <p className="font-black text-slate-800 uppercase text-[11px] mb-1">{s.Name}</p>
-                                            <div className="flex gap-2 items-center">
-                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{s.Staff_ID}</p>
-                                                {winCount > 0 && <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded text-[8px] font-black uppercase"><Trophy size={8} className="inline mr-1" /> {winCount}x Star</span>}
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <p className="font-black text-slate-800 uppercase text-[11px] mb-1">{s.Name}</p>
+                                                <div className="flex gap-2 items-center">
+                                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{s.Staff_ID}</p>
+                                                    {winCount > 0 && <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded text-[8px] font-black uppercase"><Trophy size={8} className="inline mr-1" /> {winCount}x Star</span>}
+                                                </div>
                                             </div>
+                                            <button onClick={() => handleEdit(s)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><MessageCircle size={14} /></button>
                                         </div>
                                     </td>
                                     <td className="px-10 py-6"><div><p className="font-black text-slate-700 uppercase text-[10px] mb-1">{s.Department}</p><p className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{s.Role || 'Staff'}</p></div></td>
                                     <td className="px-10 py-6"><div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 tracking-widest"><Phone size={12} className="text-slate-400" /> {s.Mobile || 'N/A'}</div></td>
                                     <td className="px-10 py-6">
                                         <div className="space-y-2">
-                                            {s.DOB && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isBirthday ? 'text-rose-500 animate-pulse' : 'text-orange-500'}`}><CalendarCheck size={12} /> DOB: {s.DOB.substring(s.DOB.length - 5) !== '00-00' ? s.DOB : 'N/A'} {isBirthday && '🎉'}</div>}
-                                            {s.DOJ && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isWorkAnniv ? 'text-indigo-500 animate-pulse' : 'text-emerald-500'}`}><Award size={12} /> Join: {s.DOJ.substring(0,4)} {isWorkAnniv && '🎊'}</div>}
+                                            {hasLeft ? (
+                                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-widest rounded"><LogOut size={10}/> Left: {cleanDol}</div>
+                                            ) : (
+                                                <>
+                                                    {s.DOB && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isBirthday ? 'text-rose-500 animate-pulse' : 'text-orange-500'}`}><CalendarCheck size={12} /> {isBirthday ? 'TODAY IS BIRTHDAY! 🎉' : `DOB: ${cleanDob}`}</div>}
+                                                    {s.DOJ && <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${isWorkAnniv ? 'text-indigo-500 animate-pulse' : 'text-emerald-500'}`}><Award size={12} /> {isWorkAnniv ? 'WORK ANNIVERSARY! 🎊' : `JOIN: ${cleanDoj}`}</div>}
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

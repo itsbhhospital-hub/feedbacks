@@ -10,15 +10,15 @@ function setupSheets() {
   let staffSheet = ss.getSheetByName('Staff_Master');
   if (!staffSheet) {
     staffSheet = ss.insertSheet('Staff_Master');
-    staffSheet.appendRow(['Staff_ID', 'Name', 'Department', 'Role', 'Email', 'Mobile', 'DOB', 'DOJ']);
-    staffSheet.getRange("A1:H1").setBackground("#2E7D32").setFontColor("white").setFontWeight("bold");
+    staffSheet.appendRow(['Staff_ID', 'Name', 'Department', 'Role', 'Email', 'Mobile', 'DOB', 'DOJ', 'DOL']);
+    staffSheet.getRange("A1:I1").setBackground("#2E7D32").setFontColor("white").setFontWeight("bold");
     // Initial Example
-    staffSheet.appendRow(['ST001', 'Rahul Sharma', 'OPD', 'Doctor', 'rahul@gmail.com', '9876543210', '1990-05-15', '2023-01-10']);
+    staffSheet.appendRow(['ST001', 'Rahul Sharma', 'OPD', 'Doctor', 'rahul@gmail.com', '9876543210', '1990-05-15', '2023-01-10', '']);
   } else {
     // Check if we need to upgrade old sheet headers
-    const currentHeaders = staffSheet.getRange("A1:E1").getValues()[0];
-    if (currentHeaders.length === 5 && currentHeaders[0] === 'Staff_ID') {
-        staffSheet.getRange("A1:H1").setValues([['Staff_ID', 'Name', 'Department', 'Role', 'Email', 'Mobile', 'DOB', 'DOJ']]);
+    const currentHeaders = staffSheet.getRange("A1:I1").getValues()[0];
+    if (currentHeaders[0] === 'Staff_ID' && currentHeaders[8] !== 'DOL') {
+        staffSheet.getRange("A1:I1").setValues([['Staff_ID', 'Name', 'Department', 'Role', 'Email', 'Mobile', 'DOB', 'DOJ', 'DOL']]);
     }
   }
 
@@ -63,6 +63,7 @@ function doPost(e) {
     if (action === 'save_vote') return saveVote(data);
     if (action === 'approve_winner') return approveWinner(data);
     if (action === 'add_staff') return addStaff(data);
+    if (action === 'edit_staff') return editStaff(data);
   } catch (err) {
     return createJsonResponse({ success: false, error: err.toString() });
   }
@@ -80,7 +81,13 @@ function getStaffList() {
   const headers = data[0];
   const staff = data.slice(1).map(row => {
     let obj = {};
-    headers.forEach((h, i) => obj[h] = row[i]);
+    headers.forEach((h, i) => {
+        let val = row[i];
+        if (val instanceof Date) {
+             val = Utilities.formatDate(val, "GMT+5:30", "yyyy-MM-dd");
+        }
+        obj[h] = val;
+    });
     return obj;
   });
   return createJsonResponse(staff);
@@ -98,13 +105,13 @@ function saveVote(res) {
   // Self-Learning: Add Nominee to Master if new
   if (res.isNewNominee && res.employeeName) {
     const nextId = "ST" + (staffSheet.getLastRow() + 100);
-    staffSheet.appendRow([nextId, res.employeeName, res.department || 'General', 'Staff', '', '', '', '']);
+    staffSheet.appendRow([nextId, res.employeeName, res.department || 'General', 'Staff', '', '', '', '', '']);
   }
 
   // Self-Learning: Add Voter to Master if new
   if (res.isNewVoter && res.voterName) {
     const nextId = "ST" + (staffSheet.getLastRow() + 101);
-    staffSheet.appendRow([nextId, res.voterName, 'General', 'Staff', '', '', '', '']);
+    staffSheet.appendRow([nextId, res.voterName, 'General', 'Staff', '', '', '', '', '']);
   }
 
   entriesSheet.appendRow([
@@ -189,9 +196,26 @@ function addStaff(data) {
     data.email || '',
     data.mobile || '',
     data.dob || '',
-    data.doj || ''
+    data.doj || '',
+    data.dol || ''
   ]);
   return createJsonResponse({ success: true });
+}
+
+function editStaff(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const staffSheet = ss.getSheetByName('Staff_Master');
+  const staffData = staffSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < staffData.length; i++) {
+    if (staffData[i][0] === data.staffId) {
+       staffSheet.getRange(i + 1, 2, 1, 8).setValues([[
+         data.name, data.department, data.role || 'Staff', data.email || '', data.mobile || '', data.dob || '', data.doj || '', data.dol || ''
+       ]]);
+       return createJsonResponse({ success: true, message: "Staff updated" });
+    }
+  }
+  return createJsonResponse({ success: false, message: "Staff not found" });
 }
 
 function getFinalWinners() {
@@ -223,7 +247,7 @@ function sendRecognition(data) {
   const month = data.month;
   const dept = data.department || data.dept;
   
-  const message = `🎉 Congratulations *${name}*! You have been awarded the *Smile Award* for ${month} from the ${dept} department at SBH Hospital! 🏆\n\nYour hard work and dedication inspire us all. Keep shining! 😊`;
+  const message = `🎉 Congratulations *${name}*! You have been awarded the *Smile Award* for ${month} from the ${dept} department! 🏆\n\nYour hard work and dedication inspire us all. Keep shining! 😊\n\n- *SBH Group Of Hospitals*`;
 
   sendWhatsApp(mobile, message);
 }
@@ -251,36 +275,39 @@ function sendWhatsApp(mobile, message) {
 function dailyCheckEvents() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Staff_Master');
   if(!sheet) return;
-  const data = sheet.getDataRange().getDisplayValues();
+  const data = sheet.getDataRange().getValues();
   if(data.length <= 1) return;
 
   const today = new Date();
-  // Get MM-DD format to match without dealing with timezone shifts easily
   const todayStr = Utilities.formatDate(today, "GMT+5:30", "MM-dd");
   const todayYear = parseInt(Utilities.formatDate(today, "GMT+5:30", "yyyy"));
 
-  // Start from row 1 (exclude header)
   for(let i=1; i<data.length; i++) {
     const name = data[i][1];
     const mobile = data[i][5];
-    const dob = data[i][6]; // e.g. 1990-05-15
-    const doj = data[i][7]; // e.g. 2023-01-10
+    let dob = data[i][6];
+    let doj = data[i][7];
+    const dol = data[i][8];
     
-    if(!mobile || mobile.trim() === '') continue;
+    // SKIP IF LEFT
+    if(dol) continue;
+
+    if(!mobile || mobile.toString().trim() === '') continue;
+
+    if (dob instanceof Date) dob = Utilities.formatDate(dob, "GMT+5:30", "yyyy-MM-dd");
+    if (doj instanceof Date) doj = Utilities.formatDate(doj, "GMT+5:30", "yyyy-MM-dd");
 
     // Check Birthday
-    if(dob && dob.length >= 5) {
-      // dob format should ideally be YYYY-MM-DD or standard display
-      // If we extract the last 5 chars of YYYY-MM-DD it gets MM-DD
+    if(typeof dob === 'string' && dob.length >= 5) {
       const dobStr = dob.substring(dob.length - 5); 
       if(dobStr === todayStr) {
-         const msg = `🎂 Happy Birthday *${name}*! 🎉\n\nWishing you a fantastic day filled with joy and success from all of us at SBH Hospital. Have a great year ahead!`;
+         const msg = `🎂 Happy Birthday *${name}*! 🎉\n\nWishing you a fantastic day filled with joy and success from all of us! Have a great year ahead!\n\n- *SBH Group Of Hospitals*`;
          sendWhatsApp(mobile, msg);
       }
     }
 
     // Check Anniversary
-    if(doj && doj.length >= 5) {
+    if(typeof doj === 'string' && doj.length >= 5) {
       const dojStr = doj.substring(doj.length - 5);
       if(dojStr === todayStr) {
          let years = 0;
@@ -290,7 +317,7 @@ function dailyCheckEvents() {
          } catch(e) {}
          
          if(years > 0) {
-             const msg = `🌟 Happy Work Anniversary *${name}*! 🎉\n\nCongratulations on completing ${years} wonderful year(s) with us at SBH Hospital! We truly appreciate your hard work and dedication.`;
+             const msg = `🌟 Happy Work Anniversary *${name}*! 🎊\n\nCongratulations on completing ${years} wonderful year(s) with us! We truly appreciate your hard work and dedication.\n\n- *SBH Group Of Hospitals*`;
              sendWhatsApp(mobile, msg);
          }
       }

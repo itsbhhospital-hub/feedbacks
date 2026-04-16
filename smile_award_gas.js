@@ -234,7 +234,7 @@ function getFinalWinners() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('Final_Winner');
     if (!sheet) return createJsonResponse([]);
-    const data = sheet.getDataRange().getValues();
+    const data = sheet.getDataRange().getDisplayValues();
     if (data.length <= 1) return createJsonResponse([]);
     
     const headers = data[0];

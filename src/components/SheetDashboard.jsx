@@ -73,13 +73,13 @@ const SectionLoader = ({ message = "Syncing with cloud..." }) => (
 );
 
 const Footer = () => (
-    <footer className="fixed bottom-0 left-0 right-0 bg-slate-900 text-white py-3.5 px-6 flex items-center justify-center gap-3 z-[100] border-t-2 border-[#F57C00] shadow-[0_-10px_30px_rgba(0,0,0,0.1)]">
+    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 py-4 px-6 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 z-[100] shadow-[0_-20px_40px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Powered by</span>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F57C00] group">Naman Mishra</span>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Architecture By</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Naman Mishra</span>
         </div>
-        <div className="h-4 w-[1px] bg-slate-700" />
-        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">© 2026 Hospital Management System</p>
+        <div className="hidden md:block h-3 w-[2px] bg-slate-200 rounded-full" />
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 md:mt-0">© 2026 Hospital Management System</p>
     </footer>
 );
 
@@ -645,8 +645,8 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                 </aside>
                 </>
             )}
-            <div className="flex-1 flex flex-col pb-20">
-                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40 lg:ml-72 shadow-sm">
+            <div className={`flex-1 flex flex-col pb-20 w-full ${isPublic ? '' : 'lg:pl-72'}`}>
+                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40 shadow-sm">
                     <div className="flex items-center gap-5">
                         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-3 bg-gradient-to-br from-orange-500 to-rose-500 text-white rounded-xl shadow-lg shadow-orange-500/30 active:scale-90 transition-all"><Menu size={24} /></button>
                         <div><h1 className="text-lg font-black text-slate-900 uppercase tracking-tighter leading-none">{activeTab.replace(/_/g, ' ')}</h1><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hospital Management System</p></div>
@@ -661,7 +661,7 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                         )}
                     </div>
                 </header>
-                <main className={`flex-1 p-4 sm:p-6 lg:p-14 ${isPublic ? '' : 'lg:ml-72'} max-w-[1400px] mx-auto w-full`}>
+                <main className="flex-1 p-4 sm:p-6 lg:p-14 max-w-[1400px] mx-auto w-full">
                     <AnimatePresence mode="wait">
                         {activeTab === 'DASHBOARD' && (
                             <div className="space-y-12 animate-in fade-in duration-700">

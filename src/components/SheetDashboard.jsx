@@ -93,8 +93,8 @@ const StatCard = ({ icon, label, value, color, gradient }) => (
 
 const DataTable = ({ data = [], type, onEdit }) => (
     <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-            <table className="w-full text-left">
+        <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left min-w-[800px] lg:min-w-full">
                 <thead className="bg-slate-50/50">
                     <tr>
                         <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Identity</th>
@@ -219,9 +219,9 @@ const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange, loading
             </div>
 
             <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-100">
-                <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.3em] flex items-center gap-4"><Activity className="text-emerald-600" size={18} /> Detailed Standings</h3></div>
+                <div className="px-6 md:px-10 py-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.3em] flex items-center gap-4"><Activity className="text-emerald-600" size={18} /> Detailed Standings</h3></div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left min-w-[600px] md:min-w-full">
                         <thead><tr className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 bg-white"><th className="px-10 py-6">Rank</th><th className="px-10 py-6 font-bold">Staff Member</th><th className="px-10 py-6">Department</th><th className="px-10 py-6 text-right">Votes</th></tr></thead>
                         <tbody className="divide-y divide-slate-50">
                             {filteredStats.map((entry, i) => (
@@ -302,15 +302,15 @@ const HRApprovalPanel = ({ stats, winners, onApprove, loading }) => {
                 </div>
             ) : Object.entries(groupedData).map(([dept, candidates]) => (
                 <div key={dept} className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-100 overflow-hidden">
-                    <div className="px-10 py-6 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                    <div className="px-6 md:px-10 py-6 bg-slate-50/80 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20"><Briefcase size={20} /></div>
+                            <div className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0"><Briefcase size={20} /></div>
                             <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Department</p><p className="text-xl font-black text-slate-800 uppercase tracking-tight">{dept}</p></div>
                         </div>
                         <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase tracking-widest">{candidates.length} Nominees</div>
                     </div>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left min-w-[500px] md:min-w-full">
                             <tbody className="divide-y divide-slate-50">
                                 {candidates.map((c, i) => {
                                     return (
@@ -442,9 +442,9 @@ const EmployeeRoster = ({ staffList, smileScriptUrl, fetchStaff, smileWinnersLis
                 )}
             </AnimatePresence>
 
-            <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-100">
+            <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-100 mt-6">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left min-w-[800px] lg:min-w-full">
                         <thead><tr className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 bg-slate-50/80 border-b border-slate-100"><th className="px-10 py-6">ID & Name</th><th className="px-10 py-6">Role & Dept</th><th className="px-10 py-6">Contact</th><th className="px-10 py-6">Important Dates</th></tr></thead>
                         <tbody className="divide-y divide-slate-50">
                             {staffList.map((s, i) => {
@@ -657,11 +657,11 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
                             <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent text-[10px] font-black tracking-widest text-slate-600 outline-none uppercase cursor-pointer" />
                         </div>
                         {(activeTab === 'OPD' || activeTab === 'RADIOLOGY') && (
-                            <button onClick={() => { setFormType(activeTab === 'RADIOLOGY' ? 'SONO' : 'OPD'); setShowForm(true); }} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:-translate-y-1 active:translate-y-0 transition-all">+ Add New Entry</button>
+                            <button onClick={() => { setFormType(activeTab === 'RADIOLOGY' ? 'SONO' : 'OPD'); setShowForm(true); }} className="hidden sm:block px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:-translate-y-1 active:translate-y-0 transition-all">+ Add Entry</button>
                         )}
                     </div>
                 </header>
-                <main className={`flex-1 p-8 lg:p-14 ${isPublic ? '' : 'lg:ml-72'} max-w-[1400px] mx-auto w-full`}>
+                <main className={`flex-1 p-4 sm:p-6 lg:p-14 ${isPublic ? '' : 'lg:ml-72'} max-w-[1400px] mx-auto w-full`}>
                     <AnimatePresence mode="wait">
                         {activeTab === 'DASHBOARD' && (
                             <div className="space-y-12 animate-in fade-in duration-700">

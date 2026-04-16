@@ -5,7 +5,7 @@ import {
     CheckCircle2, AlertCircle, X, Save, LogOut, Hospital, ChevronRight,
     User, ClipboardList, Stethoscope, Scan, TrendingUp, BarChart3,
     Calendar, Layers, Download, Globe, Heart, Award, Trophy, Smile,
-    TrendingDown, Menu
+    TrendingDown, Menu, MapPin, Sparkles
 } from 'lucide-react';
 import SmileAwardForm from './SmileAwardForm';
 import { QRCodeSVG } from 'qrcode.react';
@@ -54,86 +54,44 @@ const downloadSvgAsPng = (svg, filename = "SBH_QR_Code.png") => {
 
 // --- HELPER COMPONENTS ---
 
-const NavItem = ({ icon, label, active, onClick, dot }) => (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group ${active ? 'bg-[#2E7D32]/5 text-[#2E7D32]' : 'hover:bg-slate-50 text-slate-600'}`}>
-        {icon && <span className={`transition-colors ${active ? 'text-[#2E7D32]' : 'text-slate-400 group-hover:text-slate-600'}`}>{icon}</span>}
-        {dot && <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-[#2E7D32]' : 'bg-slate-200'}`} />}
-        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${active ? 'text-[#2E7D32]' : 'text-slate-500 group-hover:text-slate-800'}`}>{label}</span>
+const NavItem = ({ icon, label, active, onClick, dot, variant = 'primary' }) => (
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-5 py-3 rounded-2xl transition-all group relative overflow-hidden ${active ? (variant === 'primary' ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-500/20') : 'hover:bg-slate-50 text-slate-500'}`}>
+        {icon && <span className={`transition-all ${active ? 'scale-110' : 'group-hover:text-slate-800'}`}>{icon}</span>}
+        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${active ? 'text-white' : 'text-slate-500/80 group-hover:text-slate-900 font-bold'}`}>{label}</span>
+        {active && <motion.div layoutId="nav-pill" className="absolute left-0 w-1.5 h-6 bg-white rounded-r-full" />}
     </button>
 );
 
-const StatCard = ({ icon, label, value, color }) => (
-    <div className="bg-white rounded-[2rem] p-6 border border-slate-100 flex items-center gap-6 group hover:translate-y-[-2px] transition-all duration-300 shadow-sm shadow-slate-100">
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg ${color}`}>{React.cloneElement(icon, { size: 28 })}</div>
-        <div><p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-0.5">{label}</p><p className="text-3xl font-black text-slate-800 tracking-tighter">{value}</p></div>
-    </div>
-);
-
-const Input = ({ label, onChange, value, type = 'text', ...props }) => (
-    <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all outline-none font-bold text-slate-700 h-16" {...props} />
-    </div>
-);
-
-const Select = ({ label, options, onChange, value, ...props }) => (
-    <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
-        <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all outline-none font-bold text-slate-700 h-16 appearance-none" {...props}>
-            <option value="">Select Option</option>
-            {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-        </select>
-    </div>
-);
-
-const DataTable = ({ data, type, onEdit }) => (
-    <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-            <table className="w-full text-left">
-                <thead className="bg-slate-50/50">
-                    <tr>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Identity</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Details</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Consultant</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                    {data.map(row => (
-                        <tr key={row.id} className="group hover:bg-slate-50/50 transition-colors">
-                            <td className="px-8 py-5">
-                                <p className="font-bold text-slate-800 leading-tight">{row.name}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    {row.mrd_number && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">MRD #{row.mrd_number}</span>}
-                                    <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">{formatDateReadable(row.date)}</span>
-                                </div>
-                            </td>
-                            <td className="px-8 py-5">
-                                <p className="text-sm font-black text-slate-600">{row.number || row.patient_number}</p>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                    {row.crm && <span className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-black uppercase">{row.crm}</span>}
-                                    {row.scan_name && <span className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-black uppercase">{row.scan_name}</span>}
-                                    {(row.time_alloted || row.time) && <span className="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase">Time: {formatTimeToAMPM(row.time_alloted || row.time)}</span>}
-                                </div>
-                            </td>
-                            <td className="px-8 py-5">
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg w-fit text-slate-700 font-black text-[10px] uppercase"><User size={14} className="text-slate-400" /> {row.dr_name}</div>
-                            </td>
-                            <td className="px-8 py-5">
-                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${row.status === 'ARRIVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>{row.status}</span>
-                            </td>
-                            <td className="px-8 py-5 text-right"><button onClick={() => onEdit(row)} className="p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit3 className="w-5 h-5" /></button></td>
-                        </tr>
-                    ))}
-                    {data.length === 0 && <tr><td colSpan="5" className="px-8 py-20 text-center text-slate-300 text-[10px] font-black uppercase tracking-widest">No matching clinical records found</td></tr>}
-                </tbody>
-            </table>
+const SectionLoader = ({ message = "Syncing with cloud..." }) => (
+    <div className="flex flex-col items-center justify-center p-20 space-y-4">
+        <div className="relative">
+            <Loader2 className="animate-spin text-emerald-500" size={40} strokeWidth={1.5} />
+            <div className="absolute inset-0 blur-xl bg-emerald-500/20 animate-pulse" />
         </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 animate-pulse">{message}</p>
     </div>
 );
 
-const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
+const Footer = () => (
+    <footer className="fixed bottom-0 left-0 right-0 bg-slate-900 text-white py-3.5 px-6 flex items-center justify-center gap-3 z-[100] border-t-2 border-[#F57C00] shadow-[0_-10px_30px_rgba(0,0,0,0.1)]">
+        <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Powered by</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#F57C00] group">Naman Mishra</span>
+        </div>
+        <div className="h-4 w-[1px] bg-slate-700" />
+        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">© 2026 Hospital Management System</p>
+    </footer>
+);
+
+const StatCard = ({ icon, label, value, color, gradient }) => (
+    <div className="bg-white rounded-[2.5rem] p-7 border border-slate-100 flex items-center gap-6 group hover:translate-y-[-4px] transition-all duration-500 shadow-sm relative overflow-hidden">
+        <div className={`absolute -right-10 -bottom-10 opacity-[0.03] group-hover:opacity-[0.07] group-hover:scale-125 transition-all duration-700`}>{React.cloneElement(icon, { size: 120 })}</div>
+        <div className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-white shadow-xl ${gradient || color}`}>{React.cloneElement(icon, { size: 30 })}</div>
+        <div className="relative z-10"><p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.15em] mb-1">{label}</p><p className="text-4xl font-black text-slate-800 tracking-tighter">{value}</p></div>
+    </div>
+);
+
+const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange, loading }) => {
     const filteredStats = useMemo(() => {
         const target = (selectedMonth || "").trim().toLowerCase();
         return (stats.all || []).filter(s => {
@@ -144,7 +102,7 @@ const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
 
     const approvedWinners = useMemo(() => {
         const target = (selectedMonth || "").trim().toLowerCase();
-        return winners.filter(w => (w.month || "").trim().toLowerCase() === target);
+        return (winners || []).filter(w => (w.month || "").trim().toLowerCase().includes(target));
     }, [winners, selectedMonth]);
 
     const months = useMemo(() => {
@@ -153,37 +111,61 @@ const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
         return Array.from(set).filter(Boolean).sort((a,b) => new Date(b) - new Date(a));
     }, [stats.all]);
 
+    if (loading) return <SectionLoader message="Syncing leaderboard..." />;
+
     return (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div><h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">Excellence <span className="text-emerald-600">Leaderboard</span></h2><p className="text-[10px] font-black tracking-widest text-slate-400 uppercase mt-1">Celebrating our workplace stars</p></div>
-                <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100"><Calendar size={18} className="text-slate-400 ml-2" /><select value={selectedMonth} onChange={(e) => onMonthChange(e.target.value)} className="bg-transparent border-none outline-none font-black text-xs uppercase tracking-widest text-slate-600 cursor-pointer pr-8">{months.map(m => <option key={m} value={m}>{m}</option>)}</select></div>
-            </div>
-            {approvedWinners.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {approvedWinners.map((winner, idx) => (
-                        <motion.div key={idx} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-slate-900 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl shadow-slate-200">
-                            <Trophy className="absolute bottom-6 right-6 text-emerald-500/20 group-hover:scale-110 transition-transform" size={80} />
-                            <div className="relative z-10"><span className="inline-block px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest mb-4">Official Winner</span><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{winner.department}</p><h3 className="text-2xl font-black text-white uppercase tracking-tight mb-4">{winner.employee_name}</h3><div className="flex items-center gap-4 text-slate-400"><div className="flex flex-col"><span className="text-2xl font-black text-emerald-400 leading-none">{winner.votes}</span><span className="text-[8px] font-black uppercase tracking-tighter">Total Votes</span></div><div className="w-px h-8 bg-slate-800" /><span className="text-[10px] font-bold italic">{winner.month}</span></div></div>
-                        </motion.div>
-                    ))}
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
+                <div>
+                    <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter leading-none mb-2">Excellence <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Stars</span></h2>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">Honoring our department champions</p>
                 </div>
-            )}
-            <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-                <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white"><h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3"><Award className="text-emerald-600" /> Standings for {selectedMonth}</h3></div>
+                <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl shadow-xl shadow-slate-100 border border-slate-100 min-w-[200px]">
+                    <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600"><Calendar size={20} /></div>
+                    <select value={selectedMonth} onChange={(e) => onMonthChange(e.target.value)} className="flex-1 bg-transparent border-none outline-none font-black text-[11px] uppercase tracking-widest text-slate-700 cursor-pointer">{months.map(m => <option key={m} value={m}>{m}</option>)}</select>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {approvedWinners.map((winner, idx) => (
+                    <motion.div key={idx} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: idx * 0.1 }} className="bg-slate-900 rounded-[3rem] p-9 relative overflow-hidden group shadow-2xl shadow-slate-200">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-bl-full group-hover:scale-125 transition-transform duration-700" />
+                        <Sparkles className="absolute -left-4 -top-4 text-orange-400/20 group-hover:rotate-12 transition-transform" size={100} />
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-6">
+                                <span className="px-3 py-1 bg-gradient-to-r from-orange-600 to-amber-500 text-white rounded-full text-[8px] font-black uppercase tracking-[0.2em] shadow-lg shadow-orange-500/30">Department Champion</span>
+                            </div>
+                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-[0.2em] mb-1">{winner.department}</p>
+                            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-6 leading-tight">{winner.employee_name}</h3>
+                            <div className="flex items-center justify-between items-end border-t border-slate-800 pt-6">
+                                <div><p className="text-3xl font-black text-white leading-none mb-1">{winner.votes}</p><p className="text-[8px] font-black uppercase text-slate-500 tracking-widest">Total Votes</p></div>
+                                <div className="text-right text-[9px] font-bold text-slate-500 uppercase tracking-widest italic">{winner.month}</div>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+                {approvedWinners.length === 0 && (
+                    <div className="col-span-full py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 text-center">
+                        <Trophy size={48} className="mx-auto text-slate-200 mb-4" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Winners for this month have not been announced yet.</p>
+                    </div>
+                )}
+            </div>
+
+            <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-2xl shadow-slate-100">
+                <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50"><h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.3em] flex items-center gap-4"><Activity className="text-emerald-600" size={18} /> Detailed Standings</h3></div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead><tr className="bg-slate-50/50 text-[9px] font-black uppercase tracking-widest text-slate-400"><th className="px-8 py-5">Rank</th><th className="px-8 py-5">Staff Member</th><th className="px-8 py-5">Department</th><th className="px-8 py-5 text-right">Votes</th></tr></thead>
+                        <thead><tr className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 bg-white"><th className="px-10 py-6">Rank</th><th className="px-10 py-6 font-bold">Staff Member</th><th className="px-10 py-6">Department</th><th className="px-10 py-6 text-right">Votes</th></tr></thead>
                         <tbody className="divide-y divide-slate-50">
                             {filteredStats.map((entry, i) => (
-                                <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-8 py-6"><div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}`}>{i+1}</div></td>
-                                    <td className="px-8 py-6 font-bold text-slate-700">{entry.name}</td>
-                                    <td className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">{entry.dept}</td>
-                                    <td className="px-8 py-6 text-right"><span className={`px-4 py-2 rounded-xl text-[10px] font-black ${i === 0 ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100' : 'bg-slate-100 text-slate-600'}`}>{entry.votes}</span></td>
+                                <tr key={i} className="hover:bg-emerald-50/30 transition-all group">
+                                    <td className="px-10 py-7"><div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm transition-all ${i === 0 ? 'bg-orange-100 text-orange-700 shadow-lg shadow-orange-100' : 'bg-slate-100 text-slate-400'}`}>{i+1}</div></td>
+                                    <td className="px-10 py-7"><div><p className="font-black text-slate-800 uppercase text-[11px] leading-tight mb-1">{entry.name}</p><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">Nominated Professional</p></div></td>
+                                    <td className="px-10 py-7 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{entry.dept}</td>
+                                    <td className="px-10 py-7 text-right"><span className={`inline-block px-5 py-2.5 rounded-2xl text-[11px] font-black transition-all ${i === 0 ? 'bg-orange-600 text-white shadow-xl shadow-orange-200' : 'bg-slate-100 text-slate-600'}`}>{entry.votes} <span className="text-[8px] opacity-60 ml-0.5">VOTES</span></span></td>
                                 </tr>
                             ))}
-                            {filteredStats.length === 0 && <tr><td colSpan="4" className="px-8 py-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-300">No data records found for {selectedMonth}</td></tr>}
                         </tbody>
                     </table>
                 </div>
@@ -192,88 +174,90 @@ const SmileAwardStats = ({ stats, winners, selectedMonth, onMonthChange }) => {
     );
 };
 
-const HRApprovalPanel = ({ stats, winners, onApprove }) => {
+const HRApprovalPanel = ({ stats, winners, onApprove, loading }) => {
     const [submitting, setSubmitting] = useState(false);
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    
     const now = new Date();
     const currentMonthLabel = months[now.getMonth()].toLowerCase();
     const currentYearLabel = now.getFullYear().toString();
     
-    // Exact filter: Check if row month contains current month and year
-    const candidates = (stats.all || []).filter(c => {
-        let m = (c.month || "").trim();
-        // Defensive check: If m is an ISO string (contains 'T' and ends with 'Z')
-        if (m.includes('T') && m.endsWith('Z')) {
-            try {
-                const d = new Date(m);
-                m = months[d.getUTCMonth()] + " " + d.getUTCFullYear();
-            } catch(e) {}
-        }
-        m = m.toLowerCase();
-        return m.includes(currentMonthLabel) && m.includes(currentYearLabel);
-    });
+    if (loading) return <SectionLoader message="Loading nominations for review..." />;
 
-    const isWinnerApproved = (name, month) => {
+    const groupedData = (stats.all || []).filter(c => {
+        let m = (c.month || "").trim();
+        if (m.includes('T') && m.endsWith('Z')) {
+            try { const d = new Date(m); m = months[d.getUTCMonth()] + " " + d.getUTCFullYear(); } catch(e) {}
+        }
+        return m.toLowerCase().includes(currentMonthLabel) && m.toLowerCase().includes(currentYearLabel);
+    }).reduce((acc, curr) => {
+        const dept = curr.dept || 'General';
+        if (!acc[dept]) acc[dept] = [];
+        acc[dept].push(curr);
+        return acc;
+    }, {});
+
+    const isWinnerApproved = (name, dept) => {
         return (winners || []).some(w => 
             (w.employee_name || "").toLowerCase() === (name || "").toLowerCase() && 
+            (w.department || "").toLowerCase() === (dept || "").toLowerCase() &&
             (w.month || "").toLowerCase().includes(currentMonthLabel)
         );
     };
-    return (
-        <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border-2 border-slate-100 animate-in fade-in slide-in-from-bottom-5">
-            <div className="mb-10"><h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">HR <span className="text-rose-600">Approval Panel</span></h2><p className="text-[10px] font-black text-slate-400 uppercase mt-1">Approve winners to trigger automated recognition</p></div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50"><th className="pb-5 px-2">Candidate</th><th className="pb-5 px-2">Dept</th><th className="pb-5 px-2">Votes</th><th className="pb-5 px-2 text-right">Action</th></tr></thead>
-                    <tbody className="divide-y divide-slate-50">
-                        {candidates.length === 0 && stats.all && stats.all.length > 0 && (
-                            <tr>
-                                <td colSpan="4" className="py-10 text-center bg-rose-50 rounded-xl">
-                                    <p className="text-[10px] font-black text-rose-600 uppercase mb-2">Notice: {stats.all.length} entries found, but none match "{currentMonthLabel} {currentYearLabel}"</p>
-                                    <p className="text-[9px] text-slate-400 font-bold">Latest in Sheet: {(stats.all[0]?.month || "None")}</p>
-                                </td>
-                            </tr>
-                        )}
-                        {candidates.map((c, i) => {
-                            const isApproved = isWinnerApproved(c.name, c.month);
-                            return (
-                                <tr key={i} className="group">
-                                    <td className="py-6 px-2 font-bold text-slate-700">{c.name}</td>
-                                    <td className="py-6 px-2 text-[10px] font-black uppercase text-slate-400">{c.dept}</td>
-                                    <td className="py-6 px-2 font-black text-slate-900">{c.votes}</td>
-                                    <td className="py-6 px-2 text-right">
-                                        {isApproved ? (<span className="inline-flex items-center gap-2 text-emerald-600 font-bold text-[10px] uppercase tracking-widest"><CheckCircle2 size={16} /> Approved</span>) : (
-                                            <button disabled={submitting === c.name} onClick={async () => { setSubmitting(c.name); try { await onApprove(c); } finally { setSubmitting(false); } }} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all disabled:opacity-50">{submitting === c.name ? '...' : 'Approve Winner'}</button>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                        {(stats.all || []).length === 0 && <tr><td colSpan="4" className="py-20 text-center text-[10px] font-black text-slate-300 uppercase">No data received from Cloud. Please check if you have run "setupSheets" in Apps Script.</td></tr>}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
 
-const PrintQRSection = () => {
-    const nominationUrl = `${window.location.origin}${window.location.pathname}?mode=smile_award`;
+    const handleApproved = async (candidate) => {
+        setSubmitting(candidate.name);
+        try {
+            await onApprove(candidate);
+            alert(`Approved ${candidate.name} as Star of the Month for ${candidate.dept}!`);
+        } catch(e) { alert("Approval failed. Please try again."); }
+        setSubmitting(false);
+    };
+
     return (
-        <div className="max-w-xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-5">
-            <div className="bg-white rounded-[3rem] p-12 border-4 border-slate-50 text-center shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-emerald-500 to-teal-500" />
-                <div className="mb-10"><h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-2">Registration <span className="text-emerald-600">QR CODE</span></h2><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">Print and place for instant feedback/voting</p></div>
-                <div className="p-10 bg-slate-50 rounded-[2rem] inline-block mb-10 border-2 border-emerald-50 relative group">
-                    <QRCodeSVG id="dashboard-qr" value={nominationUrl} size={280} level="H" includeMargin={true} />
-                </div>
-                <div className="space-y-6">
-                    <div className="px-4 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-mono break-all opacity-80 select-all underline decoration-emerald-500">{nominationUrl}</div>
-                    <button onClick={() => downloadSvgAsPng(document.getElementById('dashboard-qr'))} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-950 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-3"><Download size={18} /> Download QR PNG</button>
-                    <button onClick={() => window.print()} className="w-full py-5 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">Print Page</button>
-                </div>
+        <div className="space-y-12 animate-in fade-in pb-20">
+            <div className="px-1">
+                <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter">Approval <span className="text-orange-600">Portal</span></h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Select and approve one champion per department</p>
             </div>
+
+            {Object.keys(groupedData).length === 0 ? (
+                <div className="bg-white rounded-[3rem] p-24 text-center border-2 border-dashed border-slate-100">
+                    <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">No pending nominations found in cloud</p>
+                </div>
+            ) : Object.entries(groupedData).map(([dept, candidates]) => (
+                <div key={dept} className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-100 overflow-hidden">
+                    <div className="px-10 py-6 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20"><Briefcase size={20} /></div>
+                            <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Department</p><p className="text-xl font-black text-slate-800 uppercase tracking-tight">{dept}</p></div>
+                        </div>
+                        <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[9px] font-black uppercase tracking-widest">{candidates.length} Nominees</div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <tbody className="divide-y divide-slate-50">
+                                {candidates.map((c, i) => {
+                                    const approved = isWinnerApproved(c.name, c.dept);
+                                    return (
+                                        <tr key={i} className="group hover:bg-slate-50/50 transition-all">
+                                            <td className="px-10 py-7"><div><p className="font-black text-slate-800 uppercase text-xs leading-none mb-1">{c.name}</p><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic">{c.votes} Overall Votes</p></div></td>
+                                            <td className="px-10 py-7 text-right">
+                                                {approved ? (
+                                                    <div className="inline-flex items-center gap-3 px-6 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest"><CheckCircle2 size={16} /> Already Approved</div>
+                                                ) : (
+                                                    <button disabled={submitting === c.name} onClick={() => handleApproved(c)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-200 transition-all disabled:opacity-50">
+                                                        {submitting === c.name ? "Processing..." : "Approve as Star"}
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ))}
         </div>
     );
 };
@@ -316,62 +300,83 @@ const SheetDashboard = ({ user, onLogout, isPublic, publicType }) => {
 
     useEffect(() => { fetchData(); }, [selectedDate]);
 
+    const handleNavClick = (tab) => {
+        setActiveTab(tab);
+        if (window.innerWidth < 1024) setIsSidebarOpen(false);
+    };
+
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans overflow-x-hidden">
             {!isPublic && (
-                <aside className={`fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-50 transition-all duration-300 w-64 shadow-2xl flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-                    <div className="p-8 border-b border-slate-50 flex flex-col items-center"><img src="/logo.png" className="h-20 mb-2" /><h1 className="text-xl font-black text-slate-900 uppercase">SBH Hospital</h1></div>
-                    <div className="p-4 flex-1 space-y-4 overflow-y-auto">
-                        <NavItem icon={<BarChart3 size={18}/>} label="Dashboard" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
+                <aside className={`fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-50 transition-all duration-500 w-72 shadow-[20px_0_50px_rgba(0,0,0,0.02)] flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                    <div className="p-10 border-b border-slate-50 flex flex-col items-center group relative cursor-pointer overflow-hidden">
+                        <div className="absolute inset-0 bg-emerald-500/5 -translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                        <img src="/logo.png" className="h-20 mb-3 relative z-10 drop-shadow-lg" />
+                        <h1 className="text-xl font-black text-slate-900 uppercase tracking-tighter relative z-10">SBH <span className="text-emerald-600">Hospital</span></h1>
+                    </div>
+                    <div className="p-6 flex-1 space-y-6 overflow-y-auto custom-scrollbar">
+                        <NavItem icon={<BarChart3 size={18}/>} label="Dashboard" active={activeTab === 'DASHBOARD'} onClick={() => handleNavClick('DASHBOARD')} />
                         
                         {user === 'SBH' && (
                             <>
-                                <p className="px-4 pt-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Clinical Management</p>
-                                <NavItem label="OPD Records" active={activeTab === 'OPD'} onClick={() => setActiveTab('OPD')} dot />
-                                <NavItem label="Radiology" active={activeTab === 'RADIOLOGY'} onClick={() => setActiveTab('RADIOLOGY')} dot />
+                                <p className="px-5 text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Management</p>
+                                <div className="space-y-2">
+                                    <NavItem label="OPD Records" active={activeTab === 'OPD'} onClick={() => handleNavClick('OPD')} dot />
+                                    <NavItem label="Radiology" active={activeTab === 'RADIOLOGY'} onClick={() => handleNavClick('RADIOLOGY')} dot />
+                                </div>
                             </>
                         )}
 
-                        <p className="px-4 pt-4 text-[9px] font-black text-[#BE123C] uppercase tracking-widest">Smile Award System</p>
-                        <NavItem icon={<Heart size={18}/>} label="Nominate Staff" active={activeTab === 'SMILE_AWARD'} onClick={() => setActiveTab('SMILE_AWARD')} />
-                        <NavItem icon={<Trophy size={18}/>} label="Leaderboard" active={activeTab === 'SMILE_STATS'} onClick={() => setActiveTab('SMILE_STATS')} />
-                        {(user === 'SBH' || user === 'HR') && (
-                            <NavItem icon={<CheckCircle2 size={18}/>} label="HR Approval Portal" active={activeTab === 'HR_PANEL'} onClick={() => setActiveTab('HR_PANEL')} />
-                        )}
-                        {user === 'SBH' && <NavItem icon={<Scan size={18}/>} label="QR Station" active={activeTab === 'PRINT_QR'} onClick={() => setActiveTab('PRINT_QR')} />}
+                        <p className="px-5 text-[9px] font-black text-orange-400 uppercase tracking-[0.3em]">Smile Award System</p>
+                        <div className="space-y-2">
+                            <NavItem icon={<Award size={18}/>} label="Nominate Staff" active={activeTab === 'SMILE_AWARD'} onClick={() => handleNavClick('SMILE_AWARD')} variant="orange" />
+                            <NavItem icon={<Trophy size={18}/>} label="Leaderboard" active={activeTab === 'SMILE_STATS'} onClick={() => handleNavClick('SMILE_STATS')} variant="orange" />
+                            {(user === 'SBH' || user === 'HR') && (
+                                <NavItem icon={<CheckCircle2 size={18}/>} label="Approval Portal" active={activeTab === 'HR_PANEL'} onClick={() => handleNavClick('HR_PANEL')} variant="orange" />
+                            )}
+                            {user === 'SBH' && <NavItem icon={<Scan size={18}/>} label="QR Station" active={activeTab === 'PRINT_QR'} onClick={() => handleNavClick('PRINT_QR')} variant="orange" />}
+                        </div>
                     </div>
-                    <div className="p-6 border-t border-slate-50"><button onClick={onLogout} className="w-full flex items-center gap-3 text-slate-400 hover:text-rose-500 font-black text-[10px] uppercase transition-colors"><LogOut size={16} /> Logout</button></div>
+                    <div className="p-8 border-t border-slate-50 bg-slate-50/50"><button onClick={onLogout} className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white text-rose-500 border border-rose-100 rounded-2xl font-black text-[10px] uppercase transition-all hover:bg-rose-500 hover:text-white shadow-sm active:scale-95"><LogOut size={16} /> Logout Securely</button></div>
                 </aside>
             )}
-            <div className="flex-1 flex flex-col">
-                <header className="h-16 bg-white border-b border-slate-100 px-6 flex items-center justify-between sticky top-0 z-40 lg:ml-64">
-                    <div className="flex items-center gap-3"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 bg-slate-900 text-white rounded-lg"><Menu size={20} /></button><h1 className="text-sm font-black text-slate-900 uppercase">{activeTab.replace(/_/g, ' ')}</h1></div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2"><Calendar size={14} className="text-emerald-600" /><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent text-[10px] font-black tracking-widest text-slate-600 outline-none" /></div>
-                        {(activeTab === 'OPD' || activeTab === 'RADIOLOGY') && <button onClick={() => { setFormType(activeTab === 'RADIOLOGY' ? 'SONO' : 'OPD'); setShowForm(true); }} className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase shadow-lg shadow-emerald-100">+ New Registry</button>}
+            <div className="flex-1 flex flex-col pb-20">
+                <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-40 lg:ml-72 shadow-sm">
+                    <div className="flex items-center gap-5">
+                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-3 bg-gradient-to-br from-orange-500 to-rose-500 text-white rounded-xl shadow-lg shadow-orange-500/30 active:scale-90 transition-all"><Menu size={24} /></button>
+                        <div><h1 className="text-lg font-black text-slate-900 uppercase tracking-tighter leading-none">{activeTab.replace(/_/g, ' ')}</h1><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hospital Management System</p></div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                        <div className="hidden md:flex items-center gap-3 bg-slate-100 hover:bg-slate-200 transition-colors rounded-2xl px-6 py-3 cursor-pointer group">
+                            <Calendar size={18} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-transparent text-[10px] font-black tracking-widest text-slate-600 outline-none uppercase cursor-pointer" />
+                        </div>
+                        {(activeTab === 'OPD' || activeTab === 'RADIOLOGY') && (
+                            <button onClick={() => { setFormType(activeTab === 'RADIOLOGY' ? 'SONO' : 'OPD'); setShowForm(true); }} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:-translate-y-1 active:translate-y-0 transition-all">+ Add New Entry</button>
+                        )}
                     </div>
                 </header>
-                <main className={`flex-1 p-6 lg:p-10 ${isPublic ? '' : 'lg:ml-64'} max-w-[1200px] mx-auto w-full`}>
+                <main className={`flex-1 p-8 lg:p-14 ${isPublic ? '' : 'lg:ml-72'} max-w-[1400px] mx-auto w-full`}>
                     <AnimatePresence mode="wait">
                         {activeTab === 'DASHBOARD' && (
-                            <div className="space-y-8 animate-in fade-in duration-500">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <StatCard icon={<Users />} label="OPD Patients" value={opdData.length} color="bg-emerald-600" />
-                                    <StatCard icon={<Scan />} label="Radiology" value={sonoData.length} color="bg-slate-800" />
-                                    <StatCard icon={<Heart />} label="Smile Votes" value={smileStats.all.length} color="bg-rose-500" />
+                            <div className="space-y-12 animate-in fade-in duration-700">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <StatCard icon={<Users />} label="OPD Patients" value={opdData.length} color="bg-emerald-600" gradient="bg-gradient-to-br from-emerald-600 to-teal-500" />
+                                    <StatCard icon={<Scan />} label="Radiology" value={sonoData.length} color="bg-slate-800" gradient="bg-gradient-to-br from-slate-900 to-slate-800" />
+                                    <StatCard icon={<Heart />} label="Smile Votes" value={smileStats.all.length} color="bg-orange-500" gradient="bg-gradient-to-br from-orange-600 to-amber-500" />
                                 </div>
                             </div>
                         )}
                         {activeTab === 'SMILE_AWARD' && <SmileAwardForm key="smile-award" onSubmissionSuccess={() => setTimeout(fetchData, 2000)} />}
-                        {activeTab === 'SMILE_STATS' && <SmileAwardStats stats={smileStats} winners={smileWinnersList} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />}
-                        {activeTab === 'HR_PANEL' && <HRApprovalPanel stats={smileStats} winners={smileWinnersList} onApprove={async(d)=> { await fetch(smileScriptUrl,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'approve_winner',...d})}); fetchData(); }} />}
+                        {activeTab === 'SMILE_STATS' && <SmileAwardStats stats={smileStats} winners={smileWinnersList} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} loading={loading} />}
+                        {activeTab === 'HR_PANEL' && <HRApprovalPanel stats={smileStats} winners={smileWinnersList} onApprove={async(d)=> { await fetch(smileScriptUrl,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'approve_winner',...d})}); fetchData(); }} loading={loading} />}
                         {activeTab === 'PRINT_QR' && <PrintQRSection />}
                         {(activeTab === 'OPD' || activeTab === 'RADIOLOGY') && <DataTable data={activeTab === 'RADIOLOGY' ? sonoData : opdData} type={activeTab} onEdit={setEditingRow} />}
                         {activeTab === 'LASIK_FORM' && <LasikSurvey isPublic={true} />}
                     </AnimatePresence>
                 </main>
             </div>
-            {loading && <div className="fixed bottom-6 right-6 z-[100] bg-white border border-emerald-100 px-4 py-2 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in"><Loader2 size={16} className="text-emerald-500 animate-spin" /><span className="text-[9px] font-black uppercase tracking-widest text-slate-800">Syncing Cloud...</span></div>}
+            <Footer />
         </div>
     );
 };

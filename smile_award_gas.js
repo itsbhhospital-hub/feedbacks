@@ -30,6 +30,10 @@ function setupSheets() {
     summarySheet = ss.insertSheet('Master_Summary');
   }
   summarySheet.getRange("A1").setFormula('=QUERY(Smile_Entries!A:H, "SELECT B, F, G, COUNT(F) WHERE F IS NOT NULL GROUP BY B, F, G ORDER BY COUNT(F) DESC LABEL COUNT(F) \'Votes\'", 1)');
+  
+  // FORCE PLAIN TEXT for Month Columns to prevent ISO Timestamp conversion
+  entriesSheet.getRange("B:B").setNumberFormat("@");
+  summarySheet.getRange("A:A").setNumberFormat("@");
 }
 
 function doGet(e) {
@@ -113,7 +117,9 @@ function saveVote(res) {
 function getLeaderboardData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Master_Summary');
-  const data = sheet.getDataRange().getValues();
+  // getDisplayValues is crucial – it takes the text as seen in the sheet (e.g. "April 2026")
+  // and ignores any background Date/ISO conversion by Google
+  const data = sheet.getDataRange().getDisplayValues();
   
   // Skip headers from QUERY which is at A1
   if (data.length <= 1) return createJsonResponse([]);

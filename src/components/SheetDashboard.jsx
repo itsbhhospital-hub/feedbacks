@@ -202,7 +202,15 @@ const HRApprovalPanel = ({ stats, winners, onApprove }) => {
     
     // Exact filter: Check if row month contains current month and year
     const candidates = (stats.all || []).filter(c => {
-        const m = (c.month || "").trim().toLowerCase();
+        let m = (c.month || "").trim();
+        // Defensive check: If m is an ISO string (contains 'T' and ends with 'Z')
+        if (m.includes('T') && m.endsWith('Z')) {
+            try {
+                const d = new Date(m);
+                m = months[d.getUTCMonth()] + " " + d.getUTCFullYear();
+            } catch(e) {}
+        }
+        m = m.toLowerCase();
         return m.includes(currentMonthLabel) && m.includes(currentYearLabel);
     });
 
